@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/SEAFSEAF.iml" filepath="$PROJECT_DIR$/.idea/SEAFSEAF.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/seafseaf.iml" filepath="$PROJECT_DIR$/.idea/seafseaf.iml" />
     </modules>
   </component>
 </project>
