@@ -9,3 +9,6 @@ class CatalogError(RandomizerError):
 class UnknownEquipment(CatalogError):
     pass
 
+
+class UnknownSlot(CatalogError):
+    pass

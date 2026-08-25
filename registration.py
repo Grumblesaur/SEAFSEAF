@@ -4,8 +4,36 @@ import os
 from pprint import pprint
 from collections import defaultdict
 from pathlib import Path
+from enum import IntEnum
 
-from exceptions import UnknownEquipment
+from exceptions import UnknownSlot
+
+
+class SlotType(IntEnum):
+    Primary = 1
+    Secondary = 2
+    Throwable = 3
+    Booster = 4
+    Armor = 5
+    Stratagem = 6
+
+    @classmethod
+    def from_name(cls, slot_name: str):
+        slot_name = slot_name.capitalize()
+        if "Primary".startswith(slot_name) or "Primaries".startswith(slot_name):
+            return cls.Primary
+        if "Secondary".startswith(slot_name) or "Secondaries".startswith(slot_name):
+            return cls.Secondary
+        if "Throwables".startswith(slot_name):
+            return cls.Throwable
+        if "Boosters".startswith(slot_name):
+            return cls.Booster
+        if "Armor".startswith(slot_name):
+            return cls.Armor
+        if "Stratagems".startswith(slot_name):
+            return cls.Stratagem
+        raise UnknownSlot(f"No matching slot type found for {slot_name!r}.")
+
 
 
 class PlayerRegistry:
@@ -117,19 +145,18 @@ class EquipmentCatalog:
         return armor
 
 
-    def has(self, slot_type: str, item_name: str) -> bool:
+    def has(self, slot: str, item_name: str) -> bool:
+        slot_type = SlotType.from_name(slot)
         match slot_type:
-            case "Primary":
+            case SlotType.Primary:
                 return item_name in self.primaries['all']
-            case "Secondary":
+            case SlotType.Secondary:
                 return item_name in self.secondaries['all']
-            case "Throwable":
+            case SlotType.Throwable:
                 return item_name in self.throwable['all']
-            case "Stratagems":
+            case SlotType.Stratagem:
                 return item_name in self.stratagems['all']
-            case "Booster":
+            case SlotType.Booster:
                 return item_name in self.boosters['all']
-            case "Armor":
+            case SlotType.Armor:
                 return item_name in self.armor['all']
-            case _:
-                raise UnknownEquipment(f"Unrecognized equipment slot: {slot_type!r}")

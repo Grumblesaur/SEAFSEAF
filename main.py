@@ -6,16 +6,18 @@ from discord.ext import commands
 from pathlib import Path
 
 from exceptions import UnknownEquipment
+from randomizer import Randomizer
 from registration import PlayerRegistry, EquipmentCatalog
 
 class SEAFSEAF(commands.Bot):
     def __init__(self, *args, **kwargs):
         self.registry: PlayerRegistry = kwargs.pop('seaf_registry')
         self.catalog: EquipmentCatalog = kwargs.pop('seaf_catalog')
+        self.randomizer: Randomizer = kwargs.pop('seaf_randomizer')
         self.config: dict = kwargs.pop('seaf_config')
         self.prefix = self.config['config']['prefix']
         self.temp_files = Path(self.config['paths']['temp'])
-        self.registered = Path(self.catalog['paths']['registry'])
+        self.registered = Path(self.config['paths']['registry'])
         os.makedirs(self.temp_files, exist_ok=True)
         os.makedirs(self.registered, exist_ok=True)
         super().__init__(*args, **kwargs)
@@ -63,7 +65,7 @@ class SEAFSEAF(commands.Bot):
         await ctx.message.reply("Helldiver! Here is your copy of the Super Earth Armed Forces Equipment Catalog."
                                 + " Mark cells in the `Add` column to track the availability of equipment aboard your"
                                 + f" super destroyer. When finished, reupload this file with the {self.prefix}register"
-                                + " command.\n\nIf your IT support staffers are away at the reeducation camps,"
+                                + " command.\n\nIf your IT personnel are away at the reeducation camps,"
                                 + " download this Super Earth-approved"
                                 + " [software package](https://www.libreoffice.org/download/).")
         dst.unlink()
@@ -71,14 +73,17 @@ class SEAFSEAF(commands.Bot):
 
 
 
+
 def main():
     config = configuration.load()
-    registry = PlayerRegistry()
-    catalog = EquipmentCatalog()
+    registry = PlayerRegistry(ods_file := config['paths']['source'])
+    catalog = EquipmentCatalog(ods_file)
+    randomizer = Randomizer(registry, catalog)
     bot = SEAFSEAF(command_prefix=config['config']['prefix'],
                    seaf_registry=registry,
                    seaf_catalog=catalog,
-                   seaf_config=config)
+                   seaf_config=config,
+                   seaf_randomizer=randomizer,)
     bot.run(config['auth']['token'])
 
 if __name__ == '__main__':
