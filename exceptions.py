@@ -12,3 +12,7 @@ class UnknownEquipment(CatalogError):
 
 class UnknownSlot(CatalogError):
     pass
+
+
+class StratagemSubtypeMismatch(CatalogError):
+    pass

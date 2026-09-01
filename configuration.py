@@ -1,7 +1,7 @@
 import tomllib
 from pathlib import Path
 
-TOML_TEMPLATE = """title = Super Earth Armed Forces Surplus Equipment Allocation Facility
+TOML_TEMPLATE = """title = "Super Earth Armed Forces Surplus Equipment Allocation Facility"
 
 [auth]
 token = "<insert token here>"

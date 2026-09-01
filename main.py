@@ -5,9 +5,11 @@ import configuration
 from discord.ext import commands
 from pathlib import Path
 
-from exceptions import UnknownEquipment
+from exceptions import UnknownEquipment, StratagemSubtypeMismatch
 from randomizer import Randomizer
-from registration import PlayerRegistry, EquipmentCatalog
+from registration import PlayerRegistry, EquipmentCatalog, PrimaryType, SecondaryType, ThrowableType, StratagemType, \
+    StratagemSubtype, ArmorWeight
+
 
 class SEAFSEAF(commands.Bot):
     def __init__(self, *args, **kwargs):
@@ -69,6 +71,50 @@ class SEAFSEAF(commands.Bot):
                                 + " download this Super Earth-approved"
                                 + " [software package](https://www.libreoffice.org/download/).")
         dst.unlink()
+
+    # noinspection type-hints
+    async def primary(self, ctx: commands.Context, ptype: PrimaryType.from_string = None, count: int = 1):
+        """Receive an assignment for a primary weapon from anywhere in the SEAF catalog."""
+        msg = self.randomizer.primary(ptype, count)
+        await ctx.message.reply(msg)
+
+    # noinspection type-hints
+    async def secondary(self, ctx: commands.Context, stype: SecondaryType.from_string = None, count: int = 1):
+        """Receive an assignment for a secondary weapon from anywhere in the SEAF catalog."""
+        msg = self.randomizer.secondary(stype, count)
+        await ctx.message.reply(msg)
+
+    # noinspection type-hints
+    async def throwable(self, ctx: commands.Context, ttype: ThrowableType.from_string = None, count: int = 1):
+        """Receive an assignment for a throwable weapon from anywhere in the SEAF catalog."""
+        msg = self.randomizer.throwable(ttype, count)
+        await ctx.message.reply(msg)
+
+    # noinspection type-hints
+    async def stratagem(self, ctx: commands.Context,
+                        stype: StratagemType.from_string = None,
+                        sstype: StratagemSubtype.from_string = None,
+                        count: int = 1):
+        """Receive an assignment for a stratagem from anywhere in the SEAF catalog."""
+        try:
+            msg = self.randomizer.stratagems(by_type=stype, by_subtype=sstype, n=count)
+        except StratagemSubtypeMismatch as e:
+            msg = str(e)
+        await ctx.message.reply(msg)
+
+    # noinspection type-ihnts
+    async def booster(self, ctx: commands.Context, count: int = 1):
+        """Receive an assignment for a booster from anywhere in the SEAF catalog."""
+        msg = self.randomizer.booster(n=count)
+        await ctx.message.reply(msg)
+
+
+    # noinspection type-hints
+    async def armor(self, ctx: commands.Context, aw: ArmorWeight.from_string = None, count: int = 1):
+        """Receive an assignment for an armor set from anywhere in the SEAF catalog."""
+        msg = self.randomizer.armor(by_weight=aw, n=count)
+        await ctx.message.reply(msg)
+
 
 
 
