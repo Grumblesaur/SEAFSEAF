@@ -153,9 +153,9 @@ class PlanetOrder:
 
 class EquipmentOrder:
     Preambles = {
-        "Your super destroyer must use up its surplus of": "and",
-        "You must confirm your training certification with": "or",
-        "General Brasch has ordered a fleet-wide exercise requiring the use of": "or",
+        "Your super destroyer has been selected by High Command to demonstrate the": "and",
+        "You must confirm your training certification with the": "or",
+        "General Brasch has ordered a fleet-wide exercise requiring the use of the": "or",
     }
 
     Postambles = [
