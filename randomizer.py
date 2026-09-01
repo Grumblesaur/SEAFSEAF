@@ -173,8 +173,8 @@ class EquipmentOrder:
             'Helldiver!',
             f'{preamble} {format_series(self.equipment, conjunction=conj)}.',
             postamble,
-            "If you are have not been authorized to use this equipment, use your best judgement in selecting"
-            " a substitute. Meanwhile, inform your Democracy Officer of this authorization issue immediately."
+            "\nIf you have not been authorized to the listed item(s), use your best judgement in selecting"
+            " a substitute."
         ])
 
 

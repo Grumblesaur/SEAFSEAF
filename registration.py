@@ -198,7 +198,11 @@ class ArmorWeight(StrEnum):
 class PlayerRegistry:
     def __init__(self, directory: Path):
         self.directory = directory
-        self.registered = {Path(user_file).name for user_file in os.listdir(self.directory)}
+        try:
+            self.registered = {Path(user_file).name for user_file in os.listdir(self.directory)}
+        except FileNotFoundError:
+            self.registered = set()
+            os.makedirs(directory)
 
     def register(self, uploaded_workbook: Path, user_handle: str, catalog: EquipmentCatalog):
         owned_equipment = defaultdict(set)
