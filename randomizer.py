@@ -68,11 +68,11 @@ class FactionOrder:
 
     def __str__(self):
         target = self.subfaction if self.subfaction else self.faction
-        mission = (f"Helldivers! You must seek out the {target} and {self.verb} them"
-                   + f"with the {self.noun} of Super Earth. ")
+        mission = (f"Helldiver! You must seek out the {target} and {self.verb} them"
+                   + f" with the {self.noun} of Super Earth. ")
         if self.subfaction:
-            mission += (f"If there are no {self.subfaction} incursions to be found, "
-                        f"target any other {self.faction} as you see fit.")
+            mission += (f"If there are no {self.subfaction} incursions to be found,"
+                        f" target any other {self.faction} as you see fit.")
         return mission
 
 
@@ -110,7 +110,7 @@ class PlanetOrder:
     Preambles = [
         "Super Earth High Command requires performance data for your equipment",
         "Super Earth researchers have made a data request for operations",
-        "Super Earth scientists have a new hypothesis about combat",
+        "Super Earth scientists need real-world data for their new hypothesis about combat",
         "Super Earth engineers need to know how your weapons stand up",
     ]
 
@@ -119,12 +119,12 @@ class PlanetOrder:
         preamble = random.choice(self.Preambles)
         if (order_type := random.choice(order_types)) == 'Planet':
             planet = random.choice(list(self.BiomeArchetypes.keys()))
-            message = (f"Helldivers! {preamble} on a {planet.lower()} planet. Consider"
+            message = (f"Helldiver! {preamble} on {planet.lower()}-type planets. Consider"
                        f" this when plotting your super destroyer's next course.")
         elif order_type == 'Biome':
             biomes = random.choices(list(self.ConditionsByBiome.keys()), k=2)
-            message = (f"Helldivers! {preamble} in the conditions of {biomes[0].lower()} and"
-                       f" {biomes[1].lower()} biomes. Prioritize such worlds "
+            message = (f"Helldiver! {preamble} in the conditions of {biomes[0].lower()} and"
+                       f" {biomes[1].lower()} biomes. Prioritize such worlds"
                        f" during your super destroyer's next war council.")
         else:  # 'Condition'
             biomes = random.choices(list(self.ConditionsByBiome.keys()), k=3)
@@ -132,8 +132,8 @@ class PlanetOrder:
             for biome in biomes:
                 for condition in self.ConditionsByBiome[biome]:
                     conditions.add(condition)
-            selected = [c for c in random.choices(list(conditions), k=2) if c is not None]
-            message = "Helldivers! "
+            selected = list({c for c in random.choices(list(conditions), k=2) if c is not None})
+            message = "Helldiver! "
             if len(selected) == 0:
                 message += (f'{preamble} under ordinary conditions. Avoid operational areas'
                             f' with environmental hazards for your next deployment!')
@@ -142,8 +142,8 @@ class PlanetOrder:
                             ' Prioritize operational areas with this condition for your'
                             ' next deployment!')
             else:
-                message = (f"Helldivers! {preamble} under conditions of {selected[0].lower()}"
-                           f" and {selected[0].lower()}. Prioritize areas with one of these conditions"
+                message = (f"Helldiver! {preamble} under conditions of {selected[0].lower()}"
+                           f" and {selected[1].lower()}. Prioritize areas with one of these conditions"
                            f" for your next deployment!")
         self.message = message
 
@@ -247,3 +247,9 @@ class Randomizer:
     def planet_order(*args, **kwargs):
         return str(PlanetOrder(*args, **kwargs))
 
+    @staticmethod
+    def mission(*args, **kwargs):
+        mission_type = random.choice([
+            FactionOrder, DifficultyOrder, PlanetOrder
+        ])
+        return str(mission_type())
