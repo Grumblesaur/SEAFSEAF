@@ -206,10 +206,8 @@ class Helldiver:
 
     def make_loadout(self, catalog: EquipmentCatalog, support_weapons: int = 1, backpacks: int = 1, vehicles: int = 1):
         if len(available_stratagems := self.equipment['Stratagems'] & catalog.stratagems['all']) <= 4:
-            print("<= 4 stratagems")
             self.stratagems = list(available_stratagems) or ["<no stratagems registered>"]
         else:
-            print("> 4 stratagems")
             unrestricted_stratagems = catalog.stratagems['types']['Offensive'] | catalog.stratagems['types']['Defensive']
             unrestricted_available = self.equipment['Stratagems'] & unrestricted_stratagems
             vehicle_stratagems = catalog.stratagems['types']['Vehicle']
