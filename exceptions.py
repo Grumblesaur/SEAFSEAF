@@ -14,6 +14,18 @@ class UserNotRegistered(RegistrationError):
     pass
 
 
+class UnknownRegistrationPreset(RegistrationError):
+    pass
+
+
+class UnknownEquipmentSource(RegistrationError):
+    pass
+
+
+class NoSourcesSpecified(RegistrationError):
+    pass
+
+
 class InvalidSquad(RegistrationError):
     pass
 

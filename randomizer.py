@@ -206,8 +206,10 @@ class Helldiver:
 
     def make_loadout(self, catalog: EquipmentCatalog, support_weapons: int = 1, backpacks: int = 1, vehicles: int = 1):
         if len(available_stratagems := self.equipment['Stratagems'] & catalog.stratagems['all']) <= 4:
-            self.stratagems = list(available_stratagems)
+            print("<= 4 stratagems")
+            self.stratagems = list(available_stratagems) or ["<no stratagems registered>"]
         else:
+            print("> 4 stratagems")
             unrestricted_stratagems = catalog.stratagems['types']['Offensive'] | catalog.stratagems['types']['Defensive']
             unrestricted_available = self.equipment['Stratagems'] & unrestricted_stratagems
             vehicle_stratagems = catalog.stratagems['types']['Vehicle']
@@ -228,11 +230,11 @@ class Helldiver:
                 self.stratagems.append(random.choice(list(plain_support_weapons_available)))
             self.stratagems.extend(random.sample(list(unrestricted_available), k=4-len(self.stratagems)))
 
-        self.primary = random.choice(list(self.equipment['Primary']))
-        self.secondary = random.choice(list(self.equipment['Secondary']))
-        self.throwable = random.choice(list(self.equipment['Throwable']))
-        self.booster = random.choice(list(self.equipment['Booster']))
-        self.armor = random.choice(list(self.equipment['Armor']))
+        self.primary = random.choice(list(self.equipment['Primary']) or ["<no primaries registered>"])
+        self.secondary = random.choice(list(self.equipment['Secondary']) or ["<no secondaries registered>"])
+        self.throwable = random.choice(list(self.equipment['Throwable']) or ["<no throwables registered>"])
+        self.booster = random.choice(list(self.equipment['Booster']) or ["<no boosters registered>"])
+        self.armor = random.choice(list(self.equipment['Armor']) or ["<no armor registered>"])
         self.loadout_set = True
 
 
@@ -241,8 +243,8 @@ class Helldiver:
                   f'- **Secondary:** `{self.secondary}`',
                   f'- **Throwable:** `{self.throwable}`',
                   f'- **Stratagems:** {utils.format_series(self.stratagems)}',
-                  f'- **Booster:** {self.booster}',
-                  f'- **Armor:** {self.armor}']
+                  f'- **Booster:** `{self.booster}`',
+                  f'- **Armor:** `{self.armor}`']
         return '\n'.join(layout)
 
 

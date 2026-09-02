@@ -5,8 +5,7 @@ import discord
 import configuration
 from discord.ext import commands
 
-from cogs.loadout_slots import LoadoutSlots
-from cogs.user_registration import UserRegistration
+from exceptions import RandomizerError
 from randomizer import Randomizer
 from registration import PlayerRegistry, EquipmentCatalog
 
@@ -48,6 +47,16 @@ class SEAFSEAF(commands.Bot):
                                        name="custom",
                                        state="Ready to randomize.",
                                    ))
+
+    async def on_command_error(self, ctx: commands.Context, error):
+        if not hasattr(error, 'original'):
+            print('UNHANDLED/NO ORIGINAL:', error)
+        elif isinstance(error.original, RandomizerError):
+            await ctx.message.reply(str(error.original))
+            print('HANDLED:', error.original)
+        else:
+            print('UNHANDLED:', error)
+
 
 bot = SEAFSEAF(configuration.load())
 bot.run()

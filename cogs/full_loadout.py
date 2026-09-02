@@ -1,7 +1,5 @@
 from discord.ext import commands
 
-from exceptions import UserNotRegistered
-
 
 class FullLoadout(commands.Cog, name='Full Loadout'):
     def __init__(self, bot):
