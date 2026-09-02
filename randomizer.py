@@ -61,7 +61,7 @@ class FactionOrder:
     Factions = {
         'Terminids': ['Rupture Strain', 'Spore Burst', 'Predator Strain'],
         'Automatons': ['Jet Brigade', 'Incineration Corps', 'Cyborg Legion'],
-        'Illuminate': ['Mindless Masses', 'Appropriators'],
+        'Illuminate': ['Mindless Masses', 'Appropriators', 'Vote Snatchers'],
     }
     Verbs = ['squash', 'crush', 'smash', 'exterminate', 'destroy', 'obliterate',
              'spread the light of democracy to', 'eliminate', 'annihilate']
