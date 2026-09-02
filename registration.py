@@ -19,30 +19,30 @@ class EqSource(StrEnum):
 
     # Standard warbonds
     SV = 'Steeled Veterans'
-    FL = 'Force of Law'
-    DUDE = 'Dust Devils'
-    VC = 'Viper Commandos'
-    PP = 'Polar Patriots'
+    CE = 'Cutting Edge'
     DD = 'Democratic Detonation'
+    PP = 'Polar Patriots'
+    VC = 'Viper Commandos'
+    FF = "Freedom's Flame"
+    CA = 'Chemical Agents'
+    TE = 'Truth Enforcers'
+    UL = 'Urban Legends'
+    SF = 'Servants of Freedom'
+    BJ = 'Borderline Justice'
+    MC = 'Masters of Ceremony'
+    FL = 'Force of Law'
+    CG = 'Control Group'
+    DUDE = 'Dust Devils'
     PC = 'Python Commandos'
     RR = 'Redacted Regiment'
-    MC = 'Masters of Ceremony'
-    BJ = 'Borderline Justice'
-    TE = 'Truth Enforcers'
+    SB = 'Siege Breakers'
     ED = 'Entrenched Division'
     EE = 'Exo Experts'
-    FF = "Freedom's Flame"
-    CE = 'Cutting Edge'
-    SF = 'Servants of Freedom'
-    SB = 'Siege Breakers'
-    CG = 'Control Group'
-    CA = 'Chemical Agents'
-    UL = 'Urban Legends'
 
     # Legendary warbonds
+    ODST = 'Obedient Democracy Support Troopers'
     KZ = 'Righteous Revenants'
     WH = "Castellan's Creed"
-    ODST = 'Obedient Democracy Support Troopers'
 
     # Premium content
     SCE = 'Super Citizen Edition'
