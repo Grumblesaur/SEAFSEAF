@@ -136,7 +136,7 @@ class RegPreset(StrEnum):
     def description(self):
         match self:
             case self.Classic:
-                d = "Default equipment, event rewards, and Helldivers Mobilize"
+                d = "Default equipment, event rewards, super destroyer equipment, and Helldivers Mobilize"
             case self.Enthusiast:
                 d = "All items from **Classic** + all non-legendary warbonds"
             case self.Collector:
