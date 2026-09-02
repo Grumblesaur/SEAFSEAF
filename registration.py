@@ -199,14 +199,18 @@ class PlayerRegistry:
     def __init__(self, directory: Path):
         self.directory = directory
         try:
-            self.registered = {Path(user_file).name for user_file in os.listdir(self.directory)}
+            self.registered = set()
+            for user_file in os.listdir(self.directory):
+                user_path = Path(user_file)
+                handle = user_path.name.removesuffix(user_path.suffix)
+                self.registered.add(handle)
         except FileNotFoundError:
             self.registered = set()
             os.makedirs(directory)
 
     def register(self, uploaded_workbook: Path, user_handle: str, catalog: EquipmentCatalog):
         owned_equipment = defaultdict(set)
-        for slot_type, df in pandas.read_excel(uploaded_workbook, sheet_name=None):
+        for slot_type, df in pandas.read_excel(uploaded_workbook, sheet_name=None).items():
             for index, (user_owns, item_name, *_) in df.iterrows():
                 if not utils.isnan(user_owns) and catalog.has(slot_type, item_name):
                     owned_equipment[slot_type].add(item_name)

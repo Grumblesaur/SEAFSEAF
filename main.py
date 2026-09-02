@@ -13,12 +13,12 @@ from registration import PlayerRegistry, EquipmentCatalog
 
 class SEAFSEAF(commands.Bot):
     def __init__(self, config, *args, **kwargs):
-        self.temp_files = config['paths']['temp']
+        self.temp_files = Path(config['paths']['temp'])
         os.makedirs(self.temp_files, exist_ok=True)
 
         self.registry_files = config['paths']['registry']
         os.makedirs(self.registry_files, exist_ok=True)
-        self.registry = PlayerRegistry(self.registry_files)
+        self.registry = PlayerRegistry(Path(self.registry_files))
         self.ods_file = config['paths']['source']
         self.catalog = EquipmentCatalog(self.ods_file)
         self.randomizer = Randomizer(self.registry, self.catalog)

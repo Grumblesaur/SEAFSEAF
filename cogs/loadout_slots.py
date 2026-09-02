@@ -3,7 +3,7 @@ from exceptions import StratagemSubtypeMismatch
 from registration import PrimaryType, SecondaryType, ThrowableType, StratagemType, StratagemSubtype, ArmorWeight
 
 
-class LoadoutSlots(commands.Cog):
+class LoadoutSlots(commands.Cog, name="Loadout Slots"):
     def __init__(self, bot):
         self.bot = bot
 

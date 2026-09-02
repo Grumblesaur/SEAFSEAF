@@ -1,3 +1,4 @@
+import discord
 from discord.ext import commands
 import shutil
 from pathlib import Path
@@ -6,7 +7,7 @@ from exceptions import UnknownEquipment
 
 FakeCog = commands.Cog()
 
-class UserRegistration(commands.Cog):
+class UserRegistration(commands.Cog, name="User Registration"):
     def __init__(self, bot):
         self.bot = bot
 
@@ -49,7 +50,8 @@ class UserRegistration(commands.Cog):
                                 + f" super destroyer. When finished, reupload this file with the {self.bot.prefix}register"
                                 + " command.\n\nIf your IT personnel are away at the reeducation camps,"
                                 + " download this Super Earth-approved"
-                                + " [software package](https://www.libreoffice.org/download/).")
+                                + " [software package](https://www.libreoffice.org/download/).",
+                                file=discord.File(dst))
         dst.unlink()
 
 
