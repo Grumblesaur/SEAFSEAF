@@ -204,7 +204,10 @@ class Helldiver:
         self.loadout_set = False
 
 
-    def make_loadout(self, catalog: EquipmentCatalog, support_weapons: int = 1, backpacks: int = 1, vehicles: int = 1):
+    def make_loadout(self, catalog: EquipmentCatalog, support_weapons: int = 1, backpacks: int = 1, vehicles: int = 1,
+                     used_boosters: set[str] | None = None, used_supply: set[str] | None = None):
+        used_boosters = used_boosters or set()
+        used_supply = used_supply or set()
         if len(available_stratagems := self.equipment['Stratagems'] & catalog.stratagems['all']) <= 4:
             self.stratagems = list(available_stratagems) or ["<no stratagems registered>"]
         else:
@@ -213,10 +216,10 @@ class Helldiver:
             vehicle_stratagems = catalog.stratagems['types']['Vehicle']
             vehicles_available = self.equipment['Stratagems'] & vehicle_stratagems
             plain_support_weapons = catalog.stratagems['subtypes']['Weapon']
-            plain_support_weapons_available = self.equipment['Stratagems'] & plain_support_weapons
+            plain_support_weapons_available = (self.equipment['Stratagems'] & plain_support_weapons) - used_supply
             backpack_stratagems = (catalog.stratagems['subtypes']['Backpack']
                                    | (backpack_weapons := catalog.stratagems['subtypes']['BackpackWeapon']))
-            backpacks_available = self.equipment['Stratagems'] & backpack_stratagems
+            backpacks_available = (self.equipment['Stratagems'] & backpack_stratagems) - used_supply
             support_weapon_open = True
             if vehicles and vehicles_available and random.choice((False, False, True)):
                 self.stratagems.append(random.choice(list(vehicles_available)))
@@ -231,7 +234,7 @@ class Helldiver:
         self.primary = random.choice(list(self.equipment['Primary']) or ["<no primaries registered>"])
         self.secondary = random.choice(list(self.equipment['Secondary']) or ["<no secondaries registered>"])
         self.throwable = random.choice(list(self.equipment['Throwable']) or ["<no throwables registered>"])
-        self.booster = random.choice(list(self.equipment['Booster']) or ["<no boosters registered>"])
+        self.booster = random.choice(list(self.equipment['Booster'] - used_boosters) or ["<no boosters registered>"])
         self.armor = random.choice(list(self.equipment['Armor']) or ["<no armor registered>"])
         self.loadout_set = True
 
@@ -357,11 +360,24 @@ class Randomizer:
         for key, value in limits.items():
             for user_handle, limit in zip(user_handles, split(value, squad_size)):
                 user_args[user_handle][key] = limit
+
+        loop_items = sorted(((handle, Helldiver(handle, self.registry), kwargs)
+                            for handle, kwargs in user_args.items()),
+                            key=lambda t: len(t[1].equipment['boosters']))
+
         loadouts = {}
-        for user_handle, args in user_args.items():
-            helldiver = Helldiver(user_handle, self.registry)
-            helldiver.make_loadout(self.catalog, **args)
-            loadouts[user_handle] = str(helldiver)
+        accumulated_boosters = set()
+        accumulated_supply = set()
+
+        for handle, helldiver, kwargs in loop_items:
+            helldiver.make_loadout(self.catalog,
+                                   **kwargs,
+                                   used_boosters=accumulated_boosters,
+                                   used_supply=accumulated_supply)
+            accumulated_boosters.add(helldiver.booster)
+            accumulated_supply.update(set(helldiver.stratagems)
+                                      & self.catalog.stratagems['types']["Supply"])
+            loadouts[handle] = str(helldiver)
         return loadouts
 
 
