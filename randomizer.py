@@ -250,7 +250,7 @@ class Helldiver:
         self._selection_kernel('Secondary', catalog, 'secondaries')
 
     def set_throwable(self, catalog: EquipmentCatalog):
-        self._selection_kernel('Throwable', catalog, 'throwables')
+        self._selection_kernel('Throwable', catalog, 'throwable')
 
     def set_booster(self, catalog: EquipmentCatalog, used_boosters: set[str] | None = None):
         self._selection_kernel('Booster', catalog, 'boosters', exclude=used_boosters)
