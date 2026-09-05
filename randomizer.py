@@ -48,7 +48,7 @@ class DifficultyOrder:
                     10, 10, 10, 10, 10, 10,
                     0]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *_args, **_kwargs):
         self.level = random.choice(self.Distribution)
 
     def __str__(self):
@@ -71,7 +71,7 @@ class FactionOrder:
 
     SubfactionOdds = (3, 20)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *_args, **_kwargs):
         self.faction = random.choice(list(self.Factions.keys()))
         if roll_against_odds(*self.SubfactionOdds):
             self.subfaction = random.choice(self.Factions[self.faction])
@@ -128,7 +128,7 @@ class PlanetOrder:
         "Super Earth engineers need to know how your weapons stand up",
     ]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *_args, **_kwargs):
         order_types = ['Planet', 'Biome', 'Condition']
         preamble = random.choice(self.Preambles)
         if (order_type := random.choice(order_types)) == 'Planet':
@@ -196,96 +196,182 @@ class Helldiver:
     SpecialFunctions = [
         ('Fire', 'Ballistic', ['Inflammable', 'Acclimated', 'Desert Stormer']),
         ('Arc', 'Stun', ['Acclimated', 'Electrical Conduit', 'Desert Stormer']),
-        ('Gas', 'Ballistic', ['Acclimated', 'Desert Stormer', 'Concussive Padding, Hazmat', 'Advanced Filtration']),
+        ('Gas', 'Fire', ['Acclimated', 'Concussive Padding, Hazmat', 'Advanced Filtration']),
         ('Laser', 'Fire', ['Inflammable', 'Servo-Assisted', 'Oxygenator']),
-        ('Explosive', 'Fire', ['Acclimated', 'Inflammable', 'Democracy Protects']),
-        ('Fire', 'Laser', ['Acclimated', 'Inflammable', 'Med-Kit', 'Scout']),
-        ('Stun', 'Gas', ['Acclimated', 'Advanced Filtration', 'Desert Stormer', 'Unflinching']),
+        ('Explosive', 'Fire', ['Acclimated', 'Inflammable', 'Kinetic Displacement Mitigation']),
+        ('Fire', 'Laser', ['Kinetic Displacement Mitigation', 'Med-Kit', 'Scout']),
+        ('Stun', 'Gas', ['Acclimated', 'Advanced Filtration', 'Unflinching']),
         ('Gas', 'Stun', ['Unflinching', 'Advanced Filtration', 'Desert Stormer']),
-        ('Ballistic', 'Explosive', ['Scout', 'Democracy Protects', 'Concussive Padding, Grenadier', 'Engineering Kit']),
-        ('Explosive', 'Gas', ['Democracy Protects', 'Engineering Kit', 'Unflinching'])
+        ('Ballistic', 'Explosive', ['Democracy Protects', 'Concussive Padding, Grenadier', 'Gunslinger']),
+        ('Explosive', 'Gas', ['Democracy Protects', 'Engineering Kit', 'Unflinching']),
+        ('Melee', 'Smoke', ['Reinforced Epaulettes', 'Peak Physique', 'Rock Solid']),
     ]
+
+    SpecialOdds = [False] * 13 + [True]
 
     def __init__(self, user_handle: str, player_registry: PlayerRegistry):
         self.equipment = player_registry.fetch_equipment(user_handle)
-        self.primary: str | None = None
-        self.secondary: str | None = None
-        self.throwable: str | None = None
+        self.special: tuple[str, str, list[str]] | None = (random.choice(self.SpecialFunctions)
+                                                           if random.choice(self.SpecialOdds)
+                                                           else None)
+        if random.choice(self.SpecialOdds):
+            self.special = random.choice(self.SpecialFunctions)
+        else:
+            self.special = None
+        print('Using special:', self.special)
+        self.primary = 'AR-23 Liberator'
+        self.secondary = 'P-2 Peacemaker'
+        self.throwable = 'G-12 High Explosive'
         self.stratagems: list[str] = []
         self.booster: str | None = None
         self.armor: str | None = None
         self.loadout_set = False
 
-
-    def make_special_loadout(self, catalog: EquipmentCatalog,
-                             used_supply: set[str] | None = None,
-                             used_boosters: set[str] | None = None):
-        used_supply = used_supply or set()
-        used_boosters = used_boosters or set()
-
-        func_a, func_b, passives = random.choice(self.SpecialFunctions)
-        armor = self.equipment['Armor']
-        for passive in passives:
-            armor &= catalog.armor['passives'][passive]
-        armor = armor or self.equipment['Armor']['Extra Padding']
-        primaries = (catalog.primaries['functions'][func_a] & self.equipment['Primary']
-                     or catalog.primaries['functions'][func_b] & self.equipment['Primary'])
-        secondaries = (catalog.secondaries['functions'][func_a] & self.equipment['Secondary']
-                       or catalog.secondaries['functions'][func_b] & self.equipment['Secondary'])
-        throwables = (catalog.throwable['functions'][func_a] & self.equipment['Throwable']
-                      or catalog.throwable['functions'][func_b] & self.equipment['Throwable'])
-        stratagems = ((catalog.stratagems['functions'][func_a] | catalog.stratagems['functions'][func_b])
-                      & self.equipment['Stratagem']) - used_supply
-
-        boosters = catalog.boosters['all'] & self.equipment['Booster']
-
-        self.armor = random.choice(list(armor))
+    def set_primary(self, catalog: EquipmentCatalog):
+        if not (primaries := self.equipment['Primary']):
+            return
+        if self.special is not None:
+            func_a, func_b, _ = self.special
+            if func_a_primaries := primaries & catalog.primaries['functions'][func_a]:
+                self.primary = random.choice(list(func_a_primaries))
+                return
+            if func_b_primaries := primaries & catalog.primaries['functions'][func_b]:
+                self.primary = random.choice(list(func_b_primaries))
+                return
         self.primary = random.choice(list(primaries))
+
+    def set_secondary(self, catalog: EquipmentCatalog):
+        if not (secondaries := self.equipment['Secondary']):
+            return
+        if self.special is not None:
+            func_a, func_b, _ = self.special
+            if func_a_secondaries := secondaries & catalog.secondaries['functions'][func_a]:
+                self.secondary = random.choice(list(func_a_secondaries))
+                return
+            if func_b_secondaries := secondaries & catalog.secondaries['functions'][func_b]:
+                self.secondary = random.choice(list(func_b_secondaries))
+                return
         self.secondary = random.choice(list(secondaries))
+
+    def set_throwable(self, catalog: EquipmentCatalog):
+        if not (throwables := self.equipment['Throwable']):
+            return
+        if self.special is not None:
+            func_a, func_b, _ = self.special
+            if func_a_throwables := throwables & catalog.throwable['functions'][func_a]:
+                self.throwable = random.choice(list(func_a_throwables))
+                return
+            if func_b_throwables := throwables & catalog.throwable['functions'][func_b]:
+                self.throwable = random.choice(list(func_b_throwables))
+                return
         self.throwable = random.choice(list(throwables))
-        self.booster = random.choice(list(boosters - used_boosters))
-        self.loadout_set = True
-        if len(stratagems) <= 4:
+
+    def set_booster(self, used_boosters: set[str] | None = None):
+        used_boosters = used_boosters or set()
+        if not (boosters := self.equipment['Booster'] - used_boosters):
+            self.booster = "<no eligible booster>"
+            return
+        self.booster = random.choice(list(boosters))
+
+    def set_armor(self, catalog: EquipmentCatalog):
+        armors = self.equipment['Armor']
+        if self.special is not None:
+            _, _, passives = self.special
+            for passive in passives:
+                if available_armors := armors & catalog.armor['passives'][passive]:
+                    self.armor = random.choice(list(available_armors))
+                    return
+        self.armor = random.choice(list(armors)) if armors else 'B-01 Tactical'
+
+    def set_stratagems(self, catalog: EquipmentCatalog, used_supply: set[str] | None = None,
+                       support_weapons: int = 1, backpacks: int = 1, vehicles: int = 1):
+        if len(stratagems := self.equipment['Stratagems']) <= 4:
             self.stratagems = list(stratagems)
             return
+        used_supply = used_supply or set()
 
-        # TODO: special loadout stratagems
+        known_supply = catalog.stratagems['types']['Supply']
+        available_supply = known_supply - used_supply
+        known_backpacks = catalog.stratagems['subtypes']['Backpack'] | catalog.stratagems['subtypes']['BackpackWeapon']
+        known_weapons = catalog.stratagems['subtypes']['Weapon'] | catalog.stratagems['subtypes']['BackpackWeapon']
+        available_backpacks = available_supply & known_backpacks
+        available_weapons = available_supply & known_weapons
+        available_vehicles = catalog.stratagems['types']['Vehicle'] & self.equipment['Stratagems']
+        available_unlimited = self.equipment['Stratagems'] - (available_supply | available_vehicles)
 
+        chosen_stratagems = set()
 
+        if self.special is not None:
+            func_a, func_b, _ = self.special
+            func_a_stratagems = self.equipment['Stratagems'] & catalog.stratagems['functions'][func_a]
+            func_b_stratagems = self.equipment['Stratagems'] & catalog.stratagems['functions'][func_b]
+        else:
+            func_a_stratagems = func_b_stratagems = self.equipment['Stratagems']
 
+        # If Helldiver is assigned a support weapon
+        if support_weapons and (func_a_support_weapons := available_weapons & func_a_stratagems):
+            usable_support_weapons = func_a_support_weapons
+        elif support_weapons and (func_b_support_weapons := available_weapons & func_b_stratagems):
+            usable_support_weapons = func_b_support_weapons
+        else:
+            usable_support_weapons = available_weapons
+        if support_weapons:
+            support_weapon = random.choice(list(usable_support_weapons))
+            if support_weapon in available_backpacks:
+                backpacks = 0
+            available_backpacks -= catalog.stratagems['subtypes']['BackpackWeapon']
+        else:
+            support_weapon = None
+
+        # If Helldiver is assigned a backpack and the support weapon slot didn't also use up the backpack slot
+        if backpacks and (func_a_backpacks := available_backpacks & func_a_stratagems):
+            usable_backpacks = func_a_backpacks
+        elif backpacks and (func_b_backpacks := available_backpacks & func_b_stratagems):
+            usable_backpacks = func_b_backpacks
+        else:
+            usable_backpacks = available_backpacks
+        backpack = random.choice(list(usable_backpacks)) if backpacks else None
+
+        if vehicles and (func_a_vehicles := available_vehicles & func_a_stratagems):
+            usable_vehicles = func_a_vehicles
+        elif vehicles and (func_b_vehicles := available_vehicles & func_b_stratagems):
+            usable_vehicles = func_b_vehicles
+        else:
+            usable_vehicles = available_vehicles
+
+        vehicle = random.choice(list(usable_vehicles)) if vehicles else None
+
+        if vehicle is not None:
+            chosen_stratagems.add(vehicle)
+        if backpack is not None:
+            chosen_stratagems.add(backpack)
+        if support_weapon is not None:
+            chosen_stratagems.add(support_weapon)
+
+        func_a_unlimited = available_unlimited & func_a_stratagems
+        func_b_unlimited = available_unlimited & func_b_stratagems
+        for strat_group in (func_a_unlimited, func_b_unlimited, available_unlimited):
+            if (k_remaining := 4 - len(chosen_stratagems)) == 0:
+                break
+            if len(strat_group) >= k_remaining:
+                chosen_stratagems.update(random.sample(list(strat_group), k_remaining))
+            else:
+                chosen_stratagems.update(strat_group)
+
+        self.stratagems = sorted(chosen_stratagems)
 
     def make_loadout(self, catalog: EquipmentCatalog, support_weapons: int = 1, backpacks: int = 1, vehicles: int = 1,
                      used_boosters: set[str] | None = None, used_supply: set[str] | None = None):
-        used_boosters = used_boosters or set()
-        used_supply = used_supply or set()
-        if len(available_stratagems := self.equipment['Stratagems'] & catalog.stratagems['all']) <= 4:
-            self.stratagems = list(available_stratagems) or ["<no stratagems registered>"]
-        else:
-            unrestricted_stratagems = catalog.stratagems['types']['Offensive'] | catalog.stratagems['types']['Defensive']
-            unrestricted_available = self.equipment['Stratagems'] & unrestricted_stratagems
-            vehicle_stratagems = catalog.stratagems['types']['Vehicle']
-            vehicles_available = self.equipment['Stratagems'] & vehicle_stratagems
-            plain_support_weapons = catalog.stratagems['subtypes']['Weapon']
-            plain_support_weapons_available = (self.equipment['Stratagems'] & plain_support_weapons) - used_supply
-            backpack_stratagems = (catalog.stratagems['subtypes']['Backpack']
-                                   | (backpack_weapons := catalog.stratagems['subtypes']['BackpackWeapon']))
-            backpacks_available = (self.equipment['Stratagems'] & backpack_stratagems) - used_supply
-            support_weapon_open = True
-            if vehicles and vehicles_available and random.choice((False, False, True)):
-                self.stratagems.append(random.choice(list(vehicles_available)))
-            if backpacks and backpacks_available and random.choice((False, False, True)):
-                self.stratagems.append(backpack := random.choice(list(backpacks_available)))
-                if backpack in backpack_weapons:
-                    support_weapon_open = False
-            if support_weapons and support_weapon_open:
-                self.stratagems.append(random.choice(list(plain_support_weapons_available)))
-            self.stratagems.extend(random.sample(list(unrestricted_available), k=4-len(self.stratagems)))
-
-        self.primary = random.choice(list(self.equipment['Primary']) or ["<no primaries registered>"])
-        self.secondary = random.choice(list(self.equipment['Secondary']) or ["<no secondaries registered>"])
-        self.throwable = random.choice(list(self.equipment['Throwable']) or ["<no throwables registered>"])
-        self.booster = random.choice(list(self.equipment['Booster'] - used_boosters) or ["<no boosters registered>"])
-        self.armor = random.choice(list(self.equipment['Armor']) or ["<no armor registered>"])
+        self.set_primary(catalog)
+        self.set_secondary(catalog)
+        self.set_throwable(catalog)
+        self.set_armor(catalog)
+        self.set_booster(used_boosters)
+        self.set_stratagems(catalog,
+                            used_supply=used_supply,
+                            support_weapons=support_weapons,
+                            backpacks=backpacks,
+                            vehicles=vehicles)
         self.loadout_set = True
 
 
@@ -393,7 +479,7 @@ class Randomizer:
         return str(PlanetOrder(*args, **kwargs))
 
     @staticmethod
-    def mission(*args, **kwargs) -> str:
+    def mission(*_args, **_kwargs) -> str:
         mission_type = random.choice([
             FactionOrder, DifficultyOrder, PlanetOrder
         ])
@@ -401,7 +487,10 @@ class Randomizer:
 
     def solo_loadout(self, user_handle: str) -> dict[str, str]:
         helldiver = Helldiver(user_handle, self.registry)
-        helldiver.make_loadout(self.catalog)
+        helldiver.make_loadout(self.catalog,
+                               support_weapons=int(roll_against_odds(1, 3)),
+                               vehicles=int(roll_against_odds(1, 3)),
+                               backpacks=int(roll_against_odds(1, 3)))
         return {user_handle: str(helldiver)}
 
     def squad_loadout(self, user_handles: list[str]) -> dict[str, str]:
@@ -414,7 +503,7 @@ class Randomizer:
 
         loop_items = sorted(((handle, Helldiver(handle, self.registry), kwargs)
                             for handle, kwargs in user_args.items()),
-                            key=lambda t: len(t[1].equipment['boosters']))
+                            key=lambda t: len(t[1].equipment['Boosters']))
 
         loadouts = {}
         accumulated_boosters = set()

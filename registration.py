@@ -131,7 +131,8 @@ class RegPreset(StrEnum):
     Enthusiast = "ET"  # Classic + all non-legendary warbonds
     Collector = "CL"  # Enthusiast + all legendary warbonds
     Armorer = "AM"  # Collector + all superstore items
-    Quartermaster = "QM"  # Armorer + Super Citizen edition + preorder items
+    Quartermaster = "QM"  # Armorer + Super Citizen edition
+    Veteran = "VT"  # Quartermaster + preorder bonuses
 
     def description(self):
         match self:
@@ -144,7 +145,9 @@ class RegPreset(StrEnum):
             case self.Armorer:
                 d = "All items from **Collector** + all Super Store items"
             case self.Quartermaster:
-                d = "All items from **Armorer** + Super Citizen Edition + Preorder bonuses"
+                d = "All items from **Armorer** + Super Citizen Edition"
+            case self.Veteran:
+                d = "All items from **Quartermaster** + Preorder bonuses"
         return d
 
     PresetSources = nonmember(None)
@@ -162,6 +165,8 @@ class RegPreset(StrEnum):
             return cls.Armorer
         if prefix_match(cls.Quartermaster, s):
             return cls.Quartermaster
+        if prefix_match(cls.Veteran, s):
+            return cls.Veteran
         raise UnknownRegistrationPreset(f'No matching preset for `{preset_name}`.')
 
     def sources(self):
@@ -184,9 +189,8 @@ class RegPreset(StrEnum):
         ]
 
         mapping[cls.Armorer] = mapping[cls.Collector] + [EqSource.SS]
-        mapping[cls.Quartermaster] = mapping[cls.Armorer] + [
-            EqSource.SCE, EqSource.PB,
-        ]
+        mapping[cls.Quartermaster] = mapping[cls.Armorer] + [EqSource.SCE]
+        mapping[cls.Veteran] = mapping[cls.Quartermaster] + [EqSource.PB]
         cls.PresetSources = mapping
 
 
@@ -495,8 +499,9 @@ class EquipmentCatalog:
                 self.stratagems['functions'][function].add(name)
             self.stratagems['all'].add(name)
 
+        # TODO: go to `loadout.ods` and add metadata for boosters
         boosters = self._load_boosters(pandas.read_excel(source_ods, "Booster"))
-        self.boosters = {'all': set(), 'sources': defaultdict(set)}
+        self.boosters: dict = {'all': set(), 'sources': defaultdict(set)}
         for name, source in boosters:
             self.boosters['all'].add(name)
             self.boosters['sources'][source].add(name)

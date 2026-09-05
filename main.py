@@ -56,6 +56,7 @@ class SEAFSEAF(commands.Bot):
             print('HANDLED:', error.original)
         else:
             print('UNHANDLED:', error)
+            raise error.original
 
 
 bot = SEAFSEAF(configuration.load())
