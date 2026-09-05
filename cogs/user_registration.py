@@ -38,6 +38,7 @@ class UserRegistration(commands.Cog, name="User Registration"):
     # noinspection type-hints,PyTypeHints
     @commands.command(aliases=["preset", "registerpreset"])
     async def regpreset(self, ctx: commands.Context, preset: RegPreset.from_string):
+        """Register according to an equipment preset."""
         handle = str(ctx.message.author.id)
         self.bot.registry.register_preset(handle, preset, self.bot.catalog)
         await ctx.message.reply("Helldiver, your equipment preset has been registered as your equipment list."
@@ -47,6 +48,7 @@ class UserRegistration(commands.Cog, name="User Registration"):
     @commands.command(aliases=['presets', 'viewpreset'])
     @commands.cooldown(1, 15)
     async def viewpresets(self, ctx: commands.Context):
+        """View all possible equipment presets."""
         header = ("Any of the following **Presets** or their `abbreviations` may be used"
                   f" as an argument to the {self.bot.prefix}regpreset command. All associated"
                   " equipment will be registered.")
@@ -57,6 +59,7 @@ class UserRegistration(commands.Cog, name="User Registration"):
     # noinspection type-hints,PyTypeHints
     @commands.command(aliases=['sources', 'registersources', 'regsource', 'registersource'])
     async def regsources(self, ctx: commands.Context, *sources: EqSource.from_string):
+        """Register with one or more equipment sources."""
         handle = str(ctx.message.author.id)
         if not sources:
             raise NoSourcesSpecified("You must specify at least one equipment source with this command."
@@ -69,6 +72,7 @@ class UserRegistration(commands.Cog, name="User Registration"):
     @commands.command(aliases=['viewsource', 'listsources', 'listsource'])
     @commands.cooldown(1, 15)
     async def viewsources(self, ctx: commands.Context):
+        """View all possible equipment sources."""
         source_items = [f'`{ev.name}`: {ev.value}' for ev in EqSource]
         item_chunks = more_itertools.chunked(source_items, n=3)
         source_list = [f'- {" | ".join(chunk)}' for chunk in item_chunks]

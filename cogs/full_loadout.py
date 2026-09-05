@@ -7,6 +7,7 @@ class FullLoadout(commands.Cog, name='Full Loadout'):
 
     @commands.command()
     async def solo(self, ctx: commands.Context):
+        """Create a full loadout for yourself."""
         if (user_handle := str(ctx.message.author.id)) not in self.bot.registry:
             await ctx.message.reply(f'No registration records found for you, {ctx.message.author.display_name}.'
                                     f" You must register your equipment to generate a personalized loadout."
@@ -18,6 +19,7 @@ class FullLoadout(commands.Cog, name='Full Loadout'):
 
     @commands.command()
     async def squad(self, ctx: commands.Context, *_mentions):
+        """Create a full loadout for yourself and all @mention'd Helldivers."""
         user_handles = {str(ctx.message.author.id): ctx.message.author.display_name}
         for mention in ctx.message.mentions:
             user_handles[str(mention.id)] = mention.display_name
