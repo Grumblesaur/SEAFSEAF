@@ -1,11 +1,9 @@
-from collections import defaultdict
-
 import discord
 import more_itertools
 from discord.ext import commands
 import shutil
 from pathlib import Path
-from exceptions import UnknownEquipment, UnknownRegistrationPreset, NoSourcesSpecified
+from exceptions import UnknownEquipment, NoSourcesSpecified
 from registration import RegPreset, EqSource
 
 FakeCog = commands.Cog()
