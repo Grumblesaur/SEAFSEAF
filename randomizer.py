@@ -224,7 +224,7 @@ class Helldiver:
         self.throwable = 'G-12 High Explosive'
         self.stratagems: list[str] = []
         self.booster: str | None = None
-        self.armor: str | None = None
+        self.armor = 'B-01 Tactical'
         self.loadout_set = False
 
     def set_primary(self, catalog: EquipmentCatalog):
@@ -277,6 +277,7 @@ class Helldiver:
         armors = self.equipment['Armor']
         if self.special is not None:
             _, _, passives = self.special
+            random.shuffle(passives)
             for passive in passives:
                 if available_armors := armors & catalog.armor['passives'][passive]:
                     self.armor = random.choice(list(available_armors))
