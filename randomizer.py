@@ -210,19 +210,20 @@ class Helldiver:
         ('Ballistic', 'Explosive'),
         ('Explosive', 'Gas'),
         ('Melee', 'Smoke'),
+        ('Stealth', 'Smoke'),
+        ('Stealth', 'Melee'),
+        ('Stealth', 'Stun'),
+        ('Stun', 'Stealth'),
     ]
 
     SpecialOdds = [False] * 13 + [True]
 
     def __init__(self, user_handle: str, player_registry: PlayerRegistry):
         self.equipment = player_registry.fetch_equipment(user_handle)
-        self.special: tuple[str, str] | None = (random.choice(self.SpecialFunctions)
-                                                           if random.choice(self.SpecialOdds)
-                                                           else None)
         if random.choice(self.SpecialOdds):
-            self.special = random.choice(self.SpecialFunctions)
+            self.special: tuple[str, str] | None = random.choice(self.SpecialFunctions)
         else:
-            self.special = None
+            self.special: tuple[str, str] | None = None
         print('Using special:', self.special)
         self.primary = 'AR-23 Liberator'
         self.secondary = 'P-2 Peacemaker'
@@ -232,15 +233,18 @@ class Helldiver:
         self.armor = 'B-01 Tactical'
 
     def _selection_kernel(self, eq_slot: str, catalog: EquipmentCatalog, page: str, exclude: set[str] | None = None):
-        if not (slot_eq := self.equipment[eq_slot] - (exclude or set())):
+        slot_eq = self.equipment[eq_slot] - (exclude or set())
+        if not slot_eq:
             return
         catalog_page = getattr(catalog, page)
         if self.special is not None:
             func_a, func_b = self.special
             if func_a_eq := catalog_page['functions'][func_a]:
                 setattr(self, eq_slot, choose(func_a_eq))
+                return
             if func_b_eq := catalog_page['functions'][func_b]:
                 setattr(self, eq_slot, choose(func_b_eq))
+                return
         setattr(self, eq_slot.casefold(), choose(slot_eq))
 
     def set_primary(self, catalog: EquipmentCatalog):
