@@ -552,8 +552,8 @@ class EquipmentCatalog:
     def _load_armor(dataframe: pandas.DataFrame) -> list[tuple[str, ...]]:
         """Works for armor."""
         armor = []
-        for index, (_, name, weight, passive, source) in dataframe.iterrows():
-            armor.append((name, weight, passive, source))
+        for index, (_, name, weight, passive, function, source) in dataframe.iterrows():
+            armor.append((name, weight, passive, tuple(function.split(';')), source))
         return armor
 
 
