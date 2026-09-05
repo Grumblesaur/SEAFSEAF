@@ -216,7 +216,7 @@ class Helldiver:
 
     def __init__(self, user_handle: str, player_registry: PlayerRegistry):
         self.equipment = player_registry.fetch_equipment(user_handle)
-        self.special: tuple[str, str, list[str]] | None = (random.choice(self.SpecialFunctions)
+        self.special: tuple[str, str] | None = (random.choice(self.SpecialFunctions)
                                                            if random.choice(self.SpecialOdds)
                                                            else None)
         if random.choice(self.SpecialOdds):
@@ -241,7 +241,7 @@ class Helldiver:
                 setattr(self, eq_slot, choose(func_a_eq))
             if func_b_eq := catalog_page['functions'][func_b]:
                 setattr(self, eq_slot, choose(func_b_eq))
-        setattr(self, eq_slot, choose(slot_eq))
+        setattr(self, eq_slot.casefold(), choose(slot_eq))
 
     def set_primary(self, catalog: EquipmentCatalog):
         self._selection_kernel('Primary', catalog, 'primaries')
@@ -277,7 +277,7 @@ class Helldiver:
         chosen_stratagems = set()
 
         if self.special is not None:
-            func_a, func_b, _ = self.special
+            func_a, func_b = self.special
             func_a_stratagems = self.equipment['Stratagems'] & catalog.stratagems['functions'][func_a]
             func_b_stratagems = self.equipment['Stratagems'] & catalog.stratagems['functions'][func_b]
         else:
