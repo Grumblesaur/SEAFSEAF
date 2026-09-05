@@ -231,8 +231,8 @@ class Helldiver:
         self.booster = "<no eligible booster>"
         self.armor = 'B-01 Tactical'
 
-    def _selection_kernel(self, eq_slot: str, catalog: EquipmentCatalog, page: str):
-        if not (slot_eq := self.equipment[eq_slot]):
+    def _selection_kernel(self, eq_slot: str, catalog: EquipmentCatalog, page: str, exclude: set[str] | None = None):
+        if not (slot_eq := self.equipment[eq_slot] - (exclude or set())):
             return
         catalog_page = getattr(catalog, page)
         if self.special is not None:
@@ -244,69 +244,19 @@ class Helldiver:
         setattr(self, eq_slot, choose(slot_eq))
 
     def set_primary(self, catalog: EquipmentCatalog):
-        if not (primaries := self.equipment['Primary']):
-            return
-        if self.special is not None:
-            func_a, func_b = self.special
-            if func_a_primaries := primaries & catalog.primaries['functions'][func_a]:
-                self.primary = random.choice(list(func_a_primaries))
-                return
-            if func_b_primaries := primaries & catalog.primaries['functions'][func_b]:
-                self.primary = random.choice(list(func_b_primaries))
-                return
-        self.primary = random.choice(list(primaries))
+        self._selection_kernel('Primary', catalog, 'primaries')
 
     def set_secondary(self, catalog: EquipmentCatalog):
-        if not (secondaries := self.equipment['Secondary']):
-            return
-        if self.special is not None:
-            func_a, func_b = self.special
-            if func_a_secondaries := secondaries & catalog.secondaries['functions'][func_a]:
-                self.secondary = random.choice(list(func_a_secondaries))
-                return
-            if func_b_secondaries := secondaries & catalog.secondaries['functions'][func_b]:
-                self.secondary = random.choice(list(func_b_secondaries))
-                return
-        self.secondary = random.choice(list(secondaries))
+        self._selection_kernel('Secondary', catalog, 'secondaries')
 
     def set_throwable(self, catalog: EquipmentCatalog):
-        if not (throwables := self.equipment['Throwable']):
-            return
-        if self.special is not None:
-            func_a, func_b = self.special
-            if func_a_throwables := throwables & catalog.throwable['functions'][func_a]:
-                self.throwable = random.choice(list(func_a_throwables))
-                return
-            if func_b_throwables := throwables & catalog.throwable['functions'][func_b]:
-                self.throwable = random.choice(list(func_b_throwables))
-                return
-        self.throwable = random.choice(list(throwables))
+        self._selection_kernel('Throwable', catalog, 'throwables')
 
     def set_booster(self, catalog: EquipmentCatalog, used_boosters: set[str] | None = None):
-        if not (boosters := self.equipment['Booster'] - (used_boosters or set())):
-            return
-        if self.special is not None:
-            func_a, func_b= self.special
-            if func_a_boosters := boosters & catalog.boosters['functions'][func_a]:
-                self.booster = random.choice(list(func_a_boosters))
-                return
-            if func_b_boosters := boosters & catalog.boosters['functions'][func_b]:
-                self.booster = random.choice(list(func_b_boosters))
-                return
-        self.booster = random.choice(list(boosters))
+        self._selection_kernel('Booster', catalog, 'boosters', exclude=used_boosters)
 
     def set_armor(self, catalog: EquipmentCatalog):
-        if not (armors := self.equipment['Armor']):
-            return
-        if self.special is not None:
-            func_a, func_b = self.special
-            if func_a_armors := armors & catalog.armor['functions'][func_a]:
-                self.armor = random.choice(list(func_a_armors))
-                return
-            if func_b_armors := armors & catalog.armor['functions'][func_b]:
-                self.armor = random.choice(list(func_b_armors))
-                return
-        self.armor = random.choice(list(armors))
+        self._selection_kernel('Armor', catalog, 'armor')
 
     def set_stratagems(self, catalog: EquipmentCatalog, used_supply: set[str] | None = None,
                        support_weapons: int = 1, backpacks: int = 1, vehicles: int = 1):
@@ -391,7 +341,7 @@ class Helldiver:
         self.set_secondary(catalog)
         self.set_throwable(catalog)
         self.set_armor(catalog)
-        self.set_booster(used_boosters)
+        self.set_booster(catalog, used_boosters)
         self.set_stratagems(catalog,
                             used_supply=used_supply,
                             support_weapons=support_weapons,
