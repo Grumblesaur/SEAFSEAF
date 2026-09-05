@@ -193,6 +193,19 @@ class EquipmentOrder:
 
 
 class Helldiver:
+    SpecialFunctions = [
+        ('Fire', 'Ballistic', ['Inflammable', 'Acclimated', 'Desert Stormer']),
+        ('Arc', 'Stun', ['Acclimated', 'Electrical Conduit', 'Desert Stormer']),
+        ('Gas', 'Ballistic', ['Acclimated', 'Desert Stormer', 'Concussive Padding, Hazmat', 'Advanced Filtration']),
+        ('Laser', 'Fire', ['Inflammable', 'Servo-Assisted', 'Oxygenator']),
+        ('Explosive', 'Fire', ['Acclimated', 'Inflammable', 'Democracy Protects']),
+        ('Fire', 'Laser', ['Acclimated', 'Inflammable', 'Med-Kit', 'Scout']),
+        ('Stun', 'Gas', ['Acclimated', 'Advanced Filtration', 'Desert Stormer', 'Unflinching']),
+        ('Gas', 'Stun', ['Unflinching', 'Advanced Filtration', 'Desert Stormer']),
+        ('Ballistic', 'Explosive', ['Scout', 'Democracy Protects', 'Concussive Padding, Grenadier', 'Engineering Kit']),
+        ('Explosive', 'Gas', ['Democracy Protects', 'Engineering Kit', 'Unflinching'])
+    ]
+
     def __init__(self, user_handle: str, player_registry: PlayerRegistry):
         self.equipment = player_registry.fetch_equipment(user_handle)
         self.primary: str | None = None
@@ -202,6 +215,43 @@ class Helldiver:
         self.booster: str | None = None
         self.armor: str | None = None
         self.loadout_set = False
+
+
+    def make_special_loadout(self, catalog: EquipmentCatalog,
+                             used_supply: set[str] | None = None,
+                             used_boosters: set[str] | None = None):
+        used_supply = used_supply or set()
+        used_boosters = used_boosters or set()
+
+        func_a, func_b, passives = random.choice(self.SpecialFunctions)
+        armor = self.equipment['Armor']
+        for passive in passives:
+            armor &= catalog.armor['passives'][passive]
+        armor = armor or self.equipment['Armor']['Extra Padding']
+        primaries = (catalog.primaries['functions'][func_a] & self.equipment['Primary']
+                     or catalog.primaries['functions'][func_b] & self.equipment['Primary'])
+        secondaries = (catalog.secondaries['functions'][func_a] & self.equipment['Secondary']
+                       or catalog.secondaries['functions'][func_b] & self.equipment['Secondary'])
+        throwables = (catalog.throwable['functions'][func_a] & self.equipment['Throwable']
+                      or catalog.throwable['functions'][func_b] & self.equipment['Throwable'])
+        stratagems = ((catalog.stratagems['functions'][func_a] | catalog.stratagems['functions'][func_b])
+                      & self.equipment['Stratagem']) - used_supply
+
+        boosters = catalog.boosters['all'] & self.equipment['Booster']
+
+        self.armor = random.choice(list(armor))
+        self.primary = random.choice(list(primaries))
+        self.secondary = random.choice(list(secondaries))
+        self.throwable = random.choice(list(throwables))
+        self.booster = random.choice(list(boosters - used_boosters))
+        self.loadout_set = True
+        if len(stratagems) <= 4:
+            self.stratagems = list(stratagems)
+            return
+
+        # TODO: special loadout stratagems
+
+
 
 
     def make_loadout(self, catalog: EquipmentCatalog, support_weapons: int = 1, backpacks: int = 1, vehicles: int = 1,
@@ -265,6 +315,7 @@ def calculate_squad_limits(squad_size: int) -> dict[str, int]:
         backpacks = random.randint(0, 3)
         support_weapons = random.randint(3-backpacks, 4-backpacks)
     return {'vehicles': vehicles, 'backpacks': backpacks, 'support_weapons': support_weapons}
+
 
 def split(cap: int, squad_size: int) -> list[int]:
     v = [1 for _ in range(cap)]
