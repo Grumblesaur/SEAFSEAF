@@ -499,23 +499,29 @@ class EquipmentCatalog:
                 self.stratagems['functions'][function].add(name)
             self.stratagems['all'].add(name)
 
-        # TODO: go to `loadout.ods` and add metadata for boosters
         boosters = self._load_boosters(pandas.read_excel(source_ods, "Booster"))
-        self.boosters: dict = {'all': set(), 'sources': defaultdict(set)}
-        for name, source in boosters:
+        self.boosters: dict = {'all': set(), 'sources': defaultdict(set),
+                               'functions': defaultdict(set)}
+        for name, functions, source in boosters:
             self.boosters['all'].add(name)
             self.boosters['sources'][source].add(name)
+            for function in functions:
+                self.boosters['functions'][function].add(name)
+
 
         armor = self._load_armor(pandas.read_excel(source_ods, 'Armor'))
         self.armor: dict = {'passives': defaultdict(set),
                             'weights': defaultdict(set),
+                            'functions': defaultdict(set),
                             'sources': defaultdict(set),
                             'all': set()}
-        for name, weight, passive, source in armor:
+        for name, weight, passive, functions, source in armor:
             self.armor['all'].add(name)
             self.armor['sources'][source].add(name)
             self.armor['weights'][weight].add(name)
             self.armor['passives'][passive].add(name)
+            for function in functions:
+                self.armor['functions'][function].add(name)
 
 
     @staticmethod
@@ -538,8 +544,8 @@ class EquipmentCatalog:
     def _load_boosters(dataframe: pandas.DataFrame) -> list[tuple[str, ...]]:
         """Works for boosters."""
         boosters = []
-        for index, (_, name, source) in dataframe.iterrows():
-            boosters.append((name, source))
+        for index, (_, name, functions, source) in dataframe.iterrows():
+            boosters.append((name, tuple(functions.split(';')), source))
         return boosters
 
     @staticmethod
