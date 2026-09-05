@@ -11,7 +11,7 @@ from registration import PlayerRegistry, EquipmentCatalog
 
 
 class SEAFSEAF(commands.Bot):
-    def __init__(self, config, *args, **kwargs):
+    def __init__(self, config, *_args, **_kwargs):
         self.temp_files = Path(config['paths']['temp'])
         os.makedirs(self.temp_files, exist_ok=True)
 
@@ -24,6 +24,7 @@ class SEAFSEAF(commands.Bot):
         self.prefix = config['config']['prefix']
         self.config = config
         intents = discord.Intents.default()
+        # noinspection dunder-slots,unresolved-references
         intents.message_content = True
         super().__init__(intents=intents, command_prefix=self.prefix)
 
@@ -48,6 +49,7 @@ class SEAFSEAF(commands.Bot):
                                        state="Ready to randomize.",
                                    ))
 
+    # noinspection method-overriding
     async def on_command_error(self, ctx: commands.Context, error):
         if not hasattr(error, 'original'):
             print('UNHANDLED/NO ORIGINAL:', error)
