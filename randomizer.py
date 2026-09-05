@@ -477,7 +477,7 @@ class Randomizer:
 
         loop_items = sorted(((handle, Helldiver(handle, self.registry), kwargs)
                             for handle, kwargs in user_args.items()),
-                            key=lambda t: len(t[1].equipment['Boosters']))
+                            key=lambda t: len(t[1].equipment['Booster']))
 
         loadouts = {}
         accumulated_boosters = set()
