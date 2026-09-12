@@ -38,5 +38,13 @@ class UnknownSlot(CatalogError):
     pass
 
 
+class UnknownStratagemSubtype(CatalogError):
+    pass
+
+
+class UnknownArmorWeight(CatalogError):
+    pass
+
+
 class StratagemSubtypeMismatch(CatalogError):
     pass

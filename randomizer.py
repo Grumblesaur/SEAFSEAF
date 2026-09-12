@@ -4,8 +4,8 @@ from typing import Iterable, TypeVar
 
 import utils
 from exceptions import InvalidSquad
-from registration import PlayerRegistry, EquipmentCatalog, PrimaryType, SecondaryType, ThrowableType, StratagemType, \
-    StratagemSubtype, ArmorWeight
+from registration import PlayerRegistry, EquipmentCatalog
+from equipment import PrimaryType, SecondaryType, ThrowableType, StratagemType, StratagemSubtype, Weight
 from utils import format_series
 
 T = TypeVar('T')
@@ -419,7 +419,6 @@ class Randomizer:
 
     def stratagems(self, by_type: StratagemType | None = None, by_subtype: StratagemSubtype | None = None, n: int = 1) -> str:
         if by_type is not None and by_subtype is not None:
-            by_type.validate_subtype(by_subtype)
             stratagems_by_subtype = self.catalog.stratagems['subtypes'][by_subtype.name]
             stratagems_by_type = self.catalog.stratagems['types'][by_type.name]
             stratagems = stratagems_by_subtype & stratagems_by_type
@@ -436,7 +435,7 @@ class Randomizer:
         eqo = EquipmentOrder(random.sample(list(self.catalog.boosters['all']), k=n))
         return str(eqo)
 
-    def armor(self, by_weight: ArmorWeight | None = None, n: int = 1) -> str:
+    def armor(self, by_weight: Weight | None = None, n: int = 1) -> str:
         if by_weight is None:
             armors = self.catalog.armor['all']
         else:

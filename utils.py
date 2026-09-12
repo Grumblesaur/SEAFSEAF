@@ -15,3 +15,14 @@ def format_series(v: Iterable[str], backticks: bool = True, conjunction: str = '
     rest_s = ', '.join(rest)
     last_s = f', {conjunction} {last}'
     return rest_s + last_s
+
+
+def prefix_match(str_enum, casefolded_user_input: str, *extras):
+    if str_enum.name.casefold().startswith(casefolded_user_input):
+        return True
+    if str_enum.value.casefold().startswith(casefolded_user_input):
+        return True
+    for ex in extras:
+        if ex.casefold().startswith(casefolded_user_input):
+            return True
+    return False

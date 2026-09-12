@@ -1,5 +1,7 @@
 from discord.ext import commands
 
+from eqrandomizer import Helldiver
+
 
 class FullLoadout(commands.Cog, name='Full Loadout'):
     def __init__(self, bot):
@@ -7,6 +9,19 @@ class FullLoadout(commands.Cog, name='Full Loadout'):
 
     @commands.command()
     async def solo(self, ctx: commands.Context):
+        message_parts = []
+        user_handle = str(ctx.message.author.id)
+        if user_handle not in self.bot.inventory_database:
+            # TODO: auto-register with basic equipment
+            message_parts.append('No registration records found. You have been auto-registered with'
+                                 ' all stock super destroyer stratagems and the contents of Helldivers Mobilize.'
+                                 f' To update your equipment selection, use the `{self.bot.prefix}register`'
+                                 ' command.')
+        loadout = Helldiver(user_handle, ctx.message.author.display_name, self.bot.eqrandomizer)
+
+
+    @commands.command()
+    async def _solo(self, ctx: commands.Context):
         """Create a full loadout for yourself."""
         if (user_handle := str(ctx.message.author.id)) not in self.bot.registry:
             await ctx.message.reply(f'No registration records found for you, {ctx.message.author.display_name}.'

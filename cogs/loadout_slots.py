@@ -1,6 +1,6 @@
 from discord.ext import commands
 from exceptions import StratagemSubtypeMismatch
-from registration import PrimaryType, SecondaryType, ThrowableType, StratagemType, StratagemSubtype, ArmorWeight
+from equipment import PrimaryType, SecondaryType, ThrowableType, StratagemType, StratagemSubtype, Weight
 
 
 class LoadoutSlots(commands.Cog, name="Loadout Slots"):
@@ -50,7 +50,7 @@ class LoadoutSlots(commands.Cog, name="Loadout Slots"):
 
     # noinspection type-hints,PyTypeHints
     @commands.command()
-    async def armor(self, ctx: commands.Context, aw: ArmorWeight.from_string = None, count: int = 1):
+    async def armor(self, ctx: commands.Context, aw: Weight.from_string = None, count: int = 1):
         """Receive an assignment for an armor set from anywhere in the SEAF catalog."""
         msg = self.bot.randomizer.armor(by_weight=aw, n=count)
         await ctx.message.reply(msg)

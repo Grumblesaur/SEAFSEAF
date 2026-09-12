@@ -4,7 +4,7 @@ from discord.ext import commands
 import shutil
 from pathlib import Path
 from exceptions import UnknownEquipment, NoSourcesSpecified
-from registration import RegPreset, EqSource
+from equipment import RegPreset, Source
 
 FakeCog = commands.Cog()
 
@@ -56,7 +56,7 @@ class UserRegistration(commands.Cog, name="User Registration"):
 
     # noinspection type-hints,PyTypeHints
     @commands.command(aliases=['sources', 'registersources', 'regsource', 'registersource'])
-    async def regsources(self, ctx: commands.Context, *sources: EqSource.from_string):
+    async def regsources(self, ctx: commands.Context, *sources: Source.from_string):
         """Register with one or more equipment sources."""
         handle = str(ctx.message.author.id)
         if not sources:
@@ -71,7 +71,7 @@ class UserRegistration(commands.Cog, name="User Registration"):
     @commands.cooldown(1, 15)
     async def viewsources(self, ctx: commands.Context):
         """View all possible equipment sources."""
-        source_items = [f'`{ev.name}`: {ev.value}' for ev in EqSource]
+        source_items = [f'`{ev.name}`: {ev.value}' for ev in Source]
         item_chunks = more_itertools.chunked(source_items, n=3)
         source_list = [f'- {" | ".join(chunk)}' for chunk in item_chunks]
         header = (f'The following is a list of equipment sources. These can be passed to the `{self.bot.prefix}regsources`'
