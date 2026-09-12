@@ -329,6 +329,12 @@ class Inventory:
         self.all_items = set(items or ())
         self._arrange_by_slot()
 
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.all_items!r})'
+
+    def __iter__(self):
+        yield from self.all_items
+
     def _arrange_by_slot(self):
         self.primary: set[Primary] = self.filter_items(by_slot=Slot.Primary)
         self.secondary: set[Secondary] = self.filter_items(by_slot=Slot.Secondary)
@@ -343,6 +349,21 @@ class Inventory:
                     and (item.slot is by_slot if by_slot is not None else True)
                     and (by_style in item.styles if by_style is not None else True))
         return set(filter(predicate, self.all_items))
+
+    def make_subset(self, sources: set[Source] | None = None,
+                    designations: set[str] | None = None,
+                    names: set[str] | None = None) -> Self:
+        items = set()
+        if sources:
+            items.update(item for item in self.all_items if item.source in sources)
+        if designations:
+            items.update(self.lookup_batch(list(designations), by_name=False))
+        if names:
+            items.update(self.lookup_batch(list(names), by_name=True))
+        return self.__class__(items)
+
+    def __add__(self, other: Self) -> Self:
+        return self.__class__(self.all_items | other.all_items)
 
     def filter_armor(self, by_styles: set[Style]):
         def predicate(item: EquipmentItem) -> bool:
