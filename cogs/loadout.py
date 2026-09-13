@@ -29,7 +29,7 @@ class Loadout(commands.Cog, name='Loadout'):
             message_parts.append(f'{utils.format_series(auto_registered, backticks=False)}, you'
                                  ' have been auto-registered with stock equipment, Helldivers'
                                  f' Mobilize, and super destroyer stratagems. Use `{self.bot.prefix}register`'
-                                 f'to update your equipment selection.')
+                                 f' to update your equipment selection.')
         squad = Squad(handles_to_names, self.bot.inventory_database)
         message_parts.append(str(squad))
         await ctx.message.reply('\n\n'.join(message_parts))
