@@ -1,4 +1,6 @@
 from enum import StrEnum, nonmember, IntEnum, IntFlag, auto
+from typing import Self
+
 from exceptions import UnknownRegistrationPreset, UnknownSlot, StratagemSubtypeMismatch, UnknownEquipmentSource, \
     UnknownStratagemSubtype, UnknownArmorWeight
 
@@ -194,6 +196,34 @@ class Slot(StrEnum, EnumEvalRepr):
     Booster = "booster"
     Armor = "armor"
     Stratagem = "stratagem"
+
+    @classmethod
+    def from_string(cls, s: str) -> Slot:
+        cf = s.casefold()
+        for ev in cls:
+            if prefix_match(ev, cf):
+                return ev
+        return cls.Stratagem
+
+    def required(self):
+        if self is self.Stratagem:
+            return 4
+        return 1
+
+    def sort_key(self):
+        match self:
+            case self.Primary:
+                return 1
+            case self.Secondary:
+                return 2
+            case self.Throwable:
+                return 3
+            case self.Stratagem:
+                return 4
+            case self.Booster:
+                return 5
+            case self.Armor:
+                return 6
 
 
 class StratagemType(IntEnum, EnumEvalRepr):

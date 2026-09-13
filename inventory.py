@@ -7,6 +7,8 @@ from equipment import Throwable, ThrowableType
 from equipment import Stratagem, StratagemSubtype
 from equipment import Armor, Passive, Weight
 
+AnyEquipment = Primary | Secondary | Throwable | Stratagem | Armor | Booster | EquipmentItem
+
 
 _Equipment = [
     Armor('AC-2 Obedient', Source.KZ, Passive.Acclimated, Weight.Light),
@@ -335,6 +337,22 @@ class Inventory:
     def __iter__(self):
         yield from self.all_items
 
+    def slot(self, slot: Slot) -> set[EquipmentItem]:
+        match slot:
+            case Slot.Primary:
+                items = self.primary
+            case Slot.Secondary:
+                items = self.secondary
+            case Slot.Throwable:
+                items = self.throwable
+            case Slot.Booster:
+                items = self.booster
+            case Slot.Armor:
+                items = self.armor
+            case _:
+                items = self.stratagem
+        return items
+
     def _arrange_by_slot(self):
         self.primary: set[Primary] = self.filter_items(by_slot=Slot.Primary)
         self.secondary: set[Secondary] = self.filter_items(by_slot=Slot.Secondary)
@@ -457,7 +475,7 @@ ByStyle = dict[Style, Inventory] = {
 
 
 class DefaultDiver:
-    Loadout = dict[Slot, dict[EquipmentItem, Odds]] = {
+    Loadout = {
         Slot.Armor: {
             Everything.lookup('B-01'): Odds.Common,
             Everything.lookup('TR-40'): Odds.Rare,

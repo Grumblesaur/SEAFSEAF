@@ -1,52 +1,53 @@
 from discord.ext import commands
 
-from eqrandomizer import Helldiver
+import utils
+from eqrandomizer import Squad, Piecemeal
+from equipment import Slot
+from inventory import Everything
 
 
-class FullLoadout(commands.Cog, name='Full Loadout'):
+class Loadout(commands.Cog, name='Loadout'):
     def __init__(self, bot):
         self.bot = bot
 
+
     @commands.command()
-    async def solo(self, ctx: commands.Context):
+    async def loadout(self, ctx: commands.Context, *_mentions):
+        """Produce a full loadout for yourself, with up to three mentioned players."""
         message_parts = []
-        user_handle = str(ctx.message.author.id)
-        if user_handle not in self.bot.inventory_database:
-            # TODO: auto-register with basic equipment
-            message_parts.append('No registration records found. You have been auto-registered with'
-                                 ' all stock super destroyer stratagems and the contents of Helldivers Mobilize.'
-                                 f' To update your equipment selection, use the `{self.bot.prefix}register`'
-                                 ' command.')
-        loadout = Helldiver(user_handle, ctx.message.author.display_name, self.bot.eqrandomizer)
+        handles_to_names = {str(ctx.message.author.id): ctx.message.author.display_name}
+        for count, mention in enumerate(ctx.message.mentions, start=1):
+            if len(handles_to_names) >= 4:
+                break
+            handles_to_names[str(mention.id)] = mention.display_name
+        auto_registered = []
+        for handle in handles_to_names:
+            if handle not in self.bot.inventory_database:
+                self.bot.inventory_database.register(handle)
+                auto_registered.append(handles_to_names[handle])
+        if auto_registered:
+            message_parts.append(f'{utils.format_series(auto_registered, backticks=False)}, you'
+                                 ' have been auto-registered with stock equipment, Helldivers'
+                                 f' Mobilize, and super destroyer stratagems. Use `{self.bot.prefix}register`'
+                                 f'to update your equipment selection.')
+        squad = Squad(handles_to_names, self.bot.inventory_database)
+        message_parts.append(str(squad))
+        await ctx.message.reply('\n\n'.join(message_parts))
 
-
+    # noinspection type-hints
     @commands.command()
-    async def _solo(self, ctx: commands.Context):
-        """Create a full loadout for yourself."""
-        if (user_handle := str(ctx.message.author.id)) not in self.bot.registry:
-            await ctx.message.reply(f'No registration records found for you, {ctx.message.author.display_name}.'
-                                    f" You must register your equipment to generate a personalized loadout."
-                                    f" Use `{self.bot.prefix}register` for more information.")
-            return
-        loadout = self.bot.randomizer.solo_loadout(user_handle)
-        msg = f'__{ctx.message.author.display_name}__, your loadout is:\n' + loadout[user_handle]
-        await ctx.message.reply(msg)
-
-    @commands.command()
-    async def squad(self, ctx: commands.Context, *_mentions):
-        """Create a full loadout for yourself and all @mention'd Helldivers."""
-        user_handles = {str(ctx.message.author.id): ctx.message.author.display_name}
-        for mention in ctx.message.mentions:
-            user_handles[str(mention.id)] = mention.display_name
-        loadouts = self.bot.randomizer.squad_loadout(list(user_handles.keys()))
-        msg = [
-            'Helldivers! These are your equipment assignments:',
-        ]
-        for user_handle, loadout_text in sorted(loadouts.items(), key=lambda p: p[1]):
-            msg.append(f'__{user_handles[user_handle]}__:\n{loadout_text}')
-        await ctx.message.reply('\n\n'.join(msg))
-
+    async def slots(self, ctx: commands.Context, *slots: Slot.from_string):
+        message_parts = []
+        if (handle := str(ctx.message.author.id)) not in self.bot.inventory_database:
+            inventory = Everything
+            message_parts.append('You are unregistered. Your equipment will be chosen from the entire'
+                                 f' SEAF catalog. Use `{self.bot.prefix}register` to change this.')
+        else:
+            inventory = self.bot.inventory_database.fetch(handle)
+        loadout = Piecemeal(inventory, set(slots))
+        message_parts.append(str(loadout))
+        await ctx.message.reply('\n\n'.join(message_parts))
 
 
 async def setup(bot):
-    await bot.add_cog(FullLoadout(bot))
+    await bot.add_cog(Loadout(bot))
