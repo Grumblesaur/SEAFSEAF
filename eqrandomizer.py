@@ -1,4 +1,5 @@
 import operator
+import pprint
 from collections import Counter
 from enum import IntEnum
 
@@ -7,7 +8,7 @@ import random
 from typing import TypeVar, Iterable
 
 from inventory import (Style, Slot, EquipmentItem, Booster, Primary, Secondary, Throwable, Stratagem,
-                       StratagemSubtype, StratagemType, Inventory, Everything, ByStyle, Odds)
+                       StratagemSubtype, StratagemType, Inventory, Everything, ByStyle, Odds, Passive)
 from tracking import InventoryTracker
 
 T = TypeVar('T')
@@ -17,18 +18,18 @@ class ArmorMode(IntEnum):
     Include = 1
     Exclude = 0
 
-    def operation(self):
-        if self is self.Include:
-            return operator.and_
-        return operator.sub
-
 
 class Loadout:
     VehicleRoles = {Style.Driver, Style.Pilot}
     ElementalThreshold = 3
     WarningSymbol = ' [!]'
+    StylePassives = {
+        Style.Pyrotechnician: {Passive.Inflammable, Passive.KineticDisplacementMitigation, Passive.DesertStormer, Passive.Acclimated},
+        Style.Electrician: {Passive.ElectricalConduit, Passive.DesertStormer, Passive.Acclimated},
+        Style.Fumigator: {Passive.AdvancedFiltration, Passive.DesertStormer, Passive.Acclimated}
+    }
     def __init__(self, loadout_pool: Inventory, role: Style, vehicles: int = 1, backpacks: int = 1, support_weapons: int = 1,
-                 used_boosters: set[Booster] | None = None):
+                 used_boosters: set[Booster] | None = None, fusion_roles: list[Style] | None = None):
         used_boosters = used_boosters or set()
         self.vehicles = vehicles if role not in self.VehicleRoles else 1
         self.backpacks = backpacks
@@ -41,31 +42,38 @@ class Loadout:
         self.stratagem = self._get_stratagems()
         self.booster = self._get_booster(used_boosters)
         self.armor = self._get_armor()
+        self.role = role
+        self.fusion_roles = fusion_roles or []
         used_boosters.add(self.booster)
 
     def format(self, name: str) -> str:
-        return f'__{name}__, your loadout is:\n{self}'
+        fusion = f'/{"/".join(fr.name for fr in self.fusion_roles)}' if self.fusion_roles else ''
+        return f'__{name}__, your **{self.role.name}**{fusion} loadout is:\n{self}'
 
-    def warning(self, slot: Slot):
+    def warning(self, slot: Slot) -> str:
         return self.WarningSymbol if slot in self.slots_defaulted else ''
 
-    def __str__(self):
+    def __str__(self) -> str:
         stratagems = [str(s) for s in self.stratagem]
+        if (x := len(stratagems)) < 4:
+            addendum = f' (+{4-x} of your choice)'
+        else:
+            addendum = ''
         return'\n'.join([
-            f'- **Primary{self.warning(Slot.Primary)}:** `{self.primary}`',
-            f'- **Secondary{self.warning(Slot.Secondary)}:** `{self.secondary}`',
-            f'- **Throwable{self.warning(Slot.Throwable)}:** `{self.throwable}`',
-            f'- **Stratagem{self.warning(Slot.Stratagem)}:** {utils.format_series(stratagems)}',
-            f'- **Booster{self.warning(Slot.Booster)}:** `{self.booster}`',
-            f'- **Armor**{self.warning(Slot.Armor)}:** `{self.armor}`',
+            f'- **Primary**{self.warning(Slot.Primary)}: `{self.primary}`',
+            f'- **Secondary**{self.warning(Slot.Secondary)}: `{self.secondary}`',
+            f'- **Throwable**{self.warning(Slot.Throwable)}: `{self.throwable}`',
+            f'- **Stratagem**{self.warning(Slot.Stratagem)}: {utils.format_series(stratagems)}{addendum}',
+            f'- **Booster**{self.warning(Slot.Booster)}: `{self.booster}`',
+            f'- **Armor**{self.warning(Slot.Armor)}: `{self.armor}`',
         ])
 
     def _non_armor_items(self) -> Iterable[tuple[EquipmentItem, int]]:
         yield self.primary, 3
         yield self.secondary, 2
-        yield self.throwable, 1
+        yield self.throwable, 2
         for strat in self.stratagem:
-            yield strat, 2
+            yield strat, 1
         yield self.booster, 1
 
     def _get_booster(self, used_boosters: set[Booster]) -> Booster:
@@ -143,29 +151,42 @@ class Loadout:
             chosen_stratagems.update(random.sample(list(unlimited), k=unlimited_count))
         else:
             self.slots_defaulted.add(Slot.Stratagem)
-            items, counts = DefaultDive.randomization_counts(Slot.Stratagem)
-            chosen_stratagems = random.sample(items, k=4, counts=counts)
+            chosen_stratagems = set()
+            while len(chosen_stratagems) < 4:
+                items, counts = DefaultDive.randomization_counts(Slot.Stratagem, chosen_stratagems)
+                strat = random.sample(items, counts=counts, k=1)[0]
+                chosen_stratagems.add(strat)
         # noinspection bad-argument-type
         return list[Stratagem](chosen_stratagems)
 
     def _get_armor(self):
-        mode, styles = self._armor_rule()
-        op = mode.operation()
-        if not (armors := op(self.equipment_pool.armor, Everything.filter_armor(styles))):
+        mode, passives = self._armor_rule()
+        match mode:
+            case ArmorMode.Include:
+                armors = list(self.equipment_pool.filter_armor(by_passives=passives))
+            case ArmorMode.Exclude:
+                armors = list(self.equipment_pool.armor - self.equipment_pool.filter_armor(by_passives=passives))
+        if not armors:
+            armors = list(self.equipment_pool.armor)
+        if not armors:
             self.slots_defaulted.add(Slot.Armor)
             items, counts = DefaultDive.randomization_counts(Slot.Armor)
-            return random.sample(items, counts=counts, k=1)
-        return random.choice(armors)
+            return random.sample(items, counts=counts, k=1)[0]
+        return random.choice(list(armors))
 
-    def _armor_rule(self) -> tuple[ArmorMode, set[Style]]:
+    def _armor_rule(self) -> tuple[ArmorMode, set[Passive]]:
         elements = Counter()
         for item, weight in self._non_armor_items():
-            for style in (item.styles & Style.Elemental):
+            for style in (item.styles & Style.elemental()):
                 elements[style] += weight
-        if not (match := elements.most_common(1)):
-            return ArmorMode.Exclude, Style.Elemental
-        style, _ = match[0]
-        return ArmorMode.Include, {style}
+        print('elemental style scores:', elements)
+        if not (highest_scoring := elements.most_common(1)):
+            return ArmorMode.Exclude, Passive.elemental()
+        print('checking threshold...')
+        style, score = highest_scoring[0]
+        if score < self.ElementalThreshold:
+            return ArmorMode.Exclude, Passive.elemental()
+        return ArmorMode.Include, self.StylePassives[style]
 
 
 def split(n: int, squad_size: int) -> list[int]:
@@ -205,8 +226,11 @@ class Squad:
         self.handles_to_names = handles_to_names
         loadout_pools = {}
         roles = {}
+        fusion_roles = {}
         for handle, role in zip(handles_to_names.keys(), random.sample(list(Style), k=len(self.handles_to_names))):
-            loadout_pools[handle] = self._prepare_loadout_pool(idb.fetch(handle), role)
+            loadout_pool, fusion_styles = self._prepare_loadout_pool(idb.fetch(handle), role)
+            loadout_pools[handle] = loadout_pool
+            fusion_roles[handle] = fusion_styles
             roles[handle] = role
 
         self.loadouts = dict[str, Loadout]()
@@ -214,13 +238,13 @@ class Squad:
         kwargs_groups = self.supply_limits_kwargs(len(handles_to_names))
         for handle, lp in loadout_pools.items():
             kwargs = kwargs_groups.pop()
-            lo = Loadout(lp, roles[handle], **kwargs, used_boosters=used_boosters)
+            lo = Loadout(lp, roles[handle], **kwargs, used_boosters=used_boosters, fusion_roles=fusion_roles[handle])
             self.loadouts[handle] = lo
 
     def __str__(self):
         loadout_strings = [loadout.format(self.handles_to_names[handle]) for handle, loadout in self.loadouts.items()]
         if any(lo.slots_defaulted for lo in self.loadouts.values()):
-            loadout_strings.append(f'-#{Loadout.WarningSymbol} No items available for slot type.'
+            loadout_strings.append(f'-#{Loadout.WarningSymbol} No role-relevant items available for slot type.'
                                    ' Slot filled with default diving equipment.')
         return '\n\n'.join(loadout_strings)
 
@@ -228,15 +252,15 @@ class Squad:
     def _prepare_loadout_pool(inv: Inventory, main_role: Style):
         additional_styles = []
         remaining_styles = set(Style) - {main_role}
-        base_inventory = inv.filter_items(by_style=main_role)
+        base_inventory = Inventory(inv.filter_items(by_style=main_role))
         target_inventory = Inventory()
         target_inventory.update(base_inventory)
-        while not target_inventory.ready() and remaining_styles:
+        while remaining_styles and not target_inventory.ready():
             additional_style = random.choice(list(remaining_styles))
             additional_styles.append(additional_style)
             remaining_styles.discard(additional_style)
-            target_inventory.update(ByStyle[additional_style] & base_inventory)
-        return target_inventory
+            target_inventory.update(inv.filter_items(by_style=additional_style))
+        return target_inventory, list(additional_styles)
 
 
 class Piecemeal:
@@ -281,9 +305,9 @@ class Playstyle:
 class DefaultDive:
     Loadout = {
         Slot.Armor: {
-            Everything.lookup('B-01'): Odds.Common,
-            Everything.lookup('TR-40'): Odds.Rare,
-            Everything.lookup('TR-7'): Odds.Rare,
+            Everything.lookup(by_designation='B-01'): Odds.Common,
+            Everything.lookup(by_designation='TR-40'): Odds.Rare,
+            Everything.lookup(by_designation='TR-7'): Odds.Rare,
         },
         Slot.Primary: {
             Everything.lookup('AR-23'): Odds.Common,
@@ -342,31 +366,40 @@ class DefaultDive:
                 x = random.sample(items, counts=counts, k=1)
                 self.players[player][slot] = x
 
+        used_supply = set()
         for player in self.players:
-            stratagems, scounts = self.randomization_counts(Slot.Stratagem)
-            strats = random.sample(stratagems, counts=scounts, k=4)
-            self.players[player][Slot.Stratagem] = strats
+            pstrats = set()
+            while len(pstrats) < 4:
+                strats, counts = self.randomization_counts(Slot.Stratagem, exclude=pstrats | used_supply)
+                strat = random.sample(strats, counts=counts, k=1)[0]
+                pstrats.add(strat)
+                # noinspection unresolved-references
+                if strat.type == StratagemType.Supply:
+                    used_supply.add(strat)
+            self.players[player][Slot.Stratagem] = list(pstrats)
 
     def __str__(self) -> str:
         parts = []
         for player, equipment in self.players.items():
             lines = [f'__{player}__, your loadout is:']
-            for slot, contents in sorted(equipment.items(), key=lambda p: p[1].sort_key()):
-                lines.append(f'**{slot.name}**: {utils.format_series(contents)}')
+            for slot, contents in sorted(equipment.items(), key=lambda p: p[0].sort_key()):
+                lines.append(f'- **{slot.name}**: {utils.format_series(contents)}')
             parts.append('\n'.join(lines))
         return '\n\n'.join(parts)
 
     @classmethod
-    def randomization_counts(cls, slot: Slot) -> tuple[list[EquipmentItem], list[int]]:
+    def randomization_counts(cls, slot: Slot, exclude: set[EquipmentItem] | None = None) -> tuple[list[EquipmentItem], list[int]]:
+        exclude = exclude or set()
         items, counts = [], []
         for item, odds in cls.Loadout[slot].items():
-            items.append(item)
-            counts.append(int(odds))
+            if item not in exclude:
+                items.append(item)
+                counts.append(int(odds))
         return items, counts
 
     @classmethod
     def booster_counts(cls, used_boosters) -> tuple[list[Booster], list[int]]:
-        slot_copy = {eitem: odds for eitem, odds in cls.Loadout[Slot.Booster]}
+        slot_copy = {eitem: odds for eitem, odds in cls.Loadout[Slot.Booster].items()}
         for ub in used_boosters:
             slot_copy.pop(ub, None)
         items, counts = [], []

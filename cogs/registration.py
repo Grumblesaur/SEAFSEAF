@@ -1,3 +1,4 @@
+import discord
 from discord.ext import commands
 from inventory import Source, SourceGroup
 from tracking import RegistrationMode
@@ -9,7 +10,7 @@ class Registration(commands.Cog, name="Registration"):
 
     # noinspection type-hints
     @commands.command(aliases=['reg'])
-    async def register(self, ctx: commands.Context, rmode: RegistrationMode.from_string, *sources):
+    async def register(self, ctx: commands.Context, rmode: RegistrationMode.from_string, *sources: Source.from_string):
         """register <rmode: Add | Set | Drop | Clear> [source, ...]
         - Add: Includes items from listed sources.
         - Set: Sets the contents of one's inventory to that of the listed sources.
@@ -40,7 +41,15 @@ class Registration(commands.Cog, name="Registration"):
         else:
             for src in source_group.sources():
                 parts.append(f'- `{src.name}`: {src.value}')
-        await ctx.message.reply('\n'.join(parts))
+        msg = '\n'.join(parts)
+        if len(msg) > 2000:
+            with open(path := (self.bot.temp_files / 'sources.md'), 'w', encoding='utf-8') as f:
+                f.write(msg)
+            await ctx.message.reply('The full list of sources is too long for Discord. This file shows all of them.'
+                                    f' For in-chat viewing, try with a source group, e.g. `{self.bot.prefix}sources Warbonds`.',
+                                    file=discord.File(path))
+            return
+        await ctx.message.reply(msg)
 
     # noinspection type-hints
     @commands.command(aliases=['des', 'desig', 'designation'])

@@ -16,7 +16,7 @@ class SEAFSEAF(commands.Bot):
 
         self.registry_files = config['paths']['registry']
         os.makedirs(self.registry_files, exist_ok=True)
-        self.registry = InventoryTracker(Path(self.registry_files))
+        self.inventory_database = InventoryTracker(Path(self.registry_files))
         self.prefix = config['config']['prefix']
         self.config = config
         intents = discord.Intents.default()

@@ -10,7 +10,7 @@ class EnumEvalRepr:
         return f'{self.__class__.__name__}.{self.name}'
 
 
-class PrimaryType(StrEnum, EnumEvalRepr):
+class PrimaryType(EnumEvalRepr, StrEnum):
     AR = "Assault Rifle"
     MR = "Marksman Rifle"
     SMG = "Submachine Gun"
@@ -28,7 +28,7 @@ class PrimaryType(StrEnum, EnumEvalRepr):
         return cls.AR
 
 
-class SecondaryType(IntEnum, EnumEvalRepr):
+class SecondaryType(EnumEvalRepr, IntEnum):
     Pistol = 1
     Melee = 2
     Special = 3
@@ -42,7 +42,7 @@ class SecondaryType(IntEnum, EnumEvalRepr):
         return cls.Pistol
 
 
-class ThrowableType(StrEnum, EnumEvalRepr):
+class ThrowableType(EnumEvalRepr, StrEnum):
     STD = 'Standard'
     SL = 'Special'
 
@@ -55,7 +55,7 @@ class ThrowableType(StrEnum, EnumEvalRepr):
         return cls.STD
 
 
-class Slot(StrEnum, EnumEvalRepr):
+class Slot(EnumEvalRepr, StrEnum):
     Primary = "primary"
     Secondary = "secondary"
     Throwable = "throwable"
@@ -94,7 +94,7 @@ class Slot(StrEnum, EnumEvalRepr):
                 return 6
 
 
-class StratagemType(IntEnum, EnumEvalRepr):
+class StratagemType(EnumEvalRepr, IntEnum):
     Supply = 1
     Vehicle = 2
     Defensive = 3
@@ -109,7 +109,7 @@ class StratagemType(IntEnum, EnumEvalRepr):
         return cls.Offensive
 
 
-class StratagemSubtype(IntFlag, EnumEvalRepr):
+class StratagemSubtype(EnumEvalRepr, IntFlag):
     Weapon = auto()
     Backpack = auto()
     Exosuit = auto()
@@ -144,7 +144,7 @@ class StratagemSubtype(IntFlag, EnumEvalRepr):
         raise UnknownStratagemSubtype(subtype)
 
 
-class Weight(IntEnum, EnumEvalRepr):
+class Weight(EnumEvalRepr, IntEnum):
     Light = 1
     Medium = 2
     Heavy = 3
@@ -161,7 +161,7 @@ class Weight(IntEnum, EnumEvalRepr):
         return UnknownArmorWeight(weight)
 
 
-class Style(StrEnum, EnumEvalRepr):
+class Style(EnumEvalRepr, StrEnum):
     Pilot = 'extraction, exosuits, and critical mission cargo'
     Driver = 'leadership, navigation, and wheeled vehicles'
     Cleanser = 'plasma weapons'
@@ -190,10 +190,11 @@ class Style(StrEnum, EnumEvalRepr):
     Tracker = 'laser-guided or homing munitions'
     Helldiver = 'bringing our foes to justice'
 
-    Elemental = nonmember({Pyrotechnician, Fumigator, Electrician})
+    @classmethod
+    def elemental(cls):
+        return {cls.Pyrotechnician, cls.Fumigator, cls.Electrician}
 
-
-class Odds(IntEnum, EnumEvalRepr):
+class Odds(EnumEvalRepr, IntEnum):
     Common = 9
     Special = 3
     Rare = 1
@@ -216,12 +217,12 @@ class EquipmentItem:
     def __str__(self):
         return self.name
 
-    def _args(self):
+    def _repr_args(self):
         return self.name, self.source, self.styles, self.slot
 
     def __repr__(self):
         clsname = self.__class__.__name__
-        repr_args = [repr(a) for a in self._args()]
+        repr_args = [repr(a) for a in self._repr_args()]
         return f'{clsname}({", ".join(repr_args)})'
 
 
@@ -291,12 +292,12 @@ class Stratagem(EquipmentItem):
 AnyEquipment = Primary | Secondary | Throwable | Stratagem | Armor | Booster | EquipmentItem
 
 
-class Source(StrEnum, EnumEvalRepr):
-    BASE = '[Equipment Included with the Game]'
+class Source(EnumEvalRepr, StrEnum):
+    BASE = '[Unlocked]'
     STOCK = 'Default Equipment'
     HM = 'Helldivers Mobilize'
 
-    SDD = '[All Super Destroyer Equipment]'
+    SDD = '[Unlockable]'
     PAC = 'Patriotic Administration Center'
     EB = 'Engineering Bay'
     HG = 'Hangar'
@@ -304,7 +305,7 @@ class Source(StrEnum, EnumEvalRepr):
     RW = 'Robotics Workshop'
     OC = 'Orbital Cannons'
 
-    EVENT = '[All Event Rewards]'
+    EVENT = '[Event Items]'
     EV_CT = 'Census Thunder'
     EV_CF = 'Celestial Fence'
     EV_LI = 'Lightning Intercept'
@@ -313,7 +314,7 @@ class Source(StrEnum, EnumEvalRepr):
     EV_CH = 'Counterdissident Hammer'
     EV_BE = 'Blazing Electorate'
 
-    WAR = '[All Standard Warbonds]'
+    WAR = '[Standard Warbonds]'
     SV = 'Steeled Veterans'
     CE = 'Cutting Edge'
     DD = 'Democratic Detonation'
@@ -336,17 +337,17 @@ class Source(StrEnum, EnumEvalRepr):
     EE = 'Exo Experts'
 
     # Legendary warbonds
-    LEG = '[All Legendary Warbonds]'
+    LEG = '[Legendary Warbonds]'
     ODST = 'Obedient Democracy Support Troopers'
     KZ = 'Righteous Revenants'
     WH = "Castellan's Creed"
 
     # Premium content
-    PAID = '[All Paid Content]'
+    PAID = '[Paid Content]'
     SCE = 'Super Citizen Edition'
     PB = 'Preorder Bonus'
 
-    SS = '[All Super Store Pages]'
+    SS = '[Super Store]'
     SS_HM = '[$] Helldivers Mobilize'
     SS_SV = '[$] Steeled Veterans'
     SS_CE = '[$] Cutting Edge'
@@ -370,26 +371,10 @@ class Source(StrEnum, EnumEvalRepr):
     SS_EE = '[$] Exo Experts'
     SS_NW = '[$] Non-Warbond Pages'
 
-    OTHER = '[Other Equipment]'
+    OTHER = '[Other]'
     GIFT = 'Granted by Arrowhead'
 
-    ALL = '[[All Equipment]]'
-
-    Basic = nonmember([BASE, STOCK, HM])
-    Campaign = nonmember([EVENT, EV_CT, EV_CF, EV_LI, EV_PE, EV_VP, EV_CH, EV_BE])
-    Warbonds = nonmember([WAR, SV, CE, DD, PP, VC, FF, CA, TE, UL, SF,
-                          BJ, MC, FL, CG, DUDE, PC, RR, SB, ED, EE])
-    Legendary = nonmember([LEG, ODST, KZ, WH])
-    Premium = nonmember([PAID, SCE, PB])
-    SuperStore = nonmember([SS, SS_HM, SS_SV, SS_CE, SS_DD, SS_PP, SS_VC, SS_FF, SS_CA, SS_TE, SS_UL,
-                         SS_SF, SS_BJ, SS_MC, SS_FL, SS_CG, SS_DUDE, SS_PC, SS_RR, SS_SB,
-                         SS_ED, SS_EE, SS_NW])
-    SuperDestroyer = nonmember([SDD, PAC, EB, HG, BR, RW, OC])
-    Etc = nonmember([OTHER, GIFT])
-    All = nonmember([ALL] + Basic + SuperDestroyer + Campaign + Warbonds + Legendary + Premium + SuperStore)
-
-    ReplacementMapping = nonmember({src_grp[0]: src_grp[1:] for src_grp in [Basic, SuperDestroyer, Warbonds,
-                                    Campaign, Legendary, Premium, SuperStore, Etc, All]})
+    ALL = '[[Everything]]'
 
     @classmethod
     def from_string(cls, src: str) -> Source:
@@ -400,12 +385,45 @@ class Source(StrEnum, EnumEvalRepr):
         raise UnknownEquipmentSource(f'No matching equipment source for `{src}`. Use'
                                      f' the command `viewsources` for information on equipment availability.')
 
+    def replacements(self) -> list[Source]:
+        replacements = []
+        if self is self.ALL or self is self.BASE:
+            replacements.extend([self.STOCK, self.HM])
+        if self is self.ALL or self is self.SDD:
+            replacements.extend([self.PAC, self.HG, self.RW, self.EB, self.BR, self.OC])
+        if self is self.ALL or self is self.EVENT:
+            replacements.extend([self.EV_CT, self.EV_CF, self.EV_LI, self.EV_PE, self.EV_VP, self.EV_CH, self.EV_BE])
+        if self is self.ALL or self is self.WAR:
+            replacements.extend([self.SV, self.CE, self.DD, self.PP, self.VC, self.FF,
+                                 self.CA, self.TE, self.UL, self.SF, self.BJ, self.MC, self.FL,
+                                 self.CG, self.DUDE, self.PC, self.RR, self.SB, self.ED, self.EE])
+        if self is self.ALL or self is self.LEG:
+            replacements.extend([self.ODST, self.KZ, self.WH])
+        if self is self.ALL or self is self.PAID:
+            replacements.extend([self.SCE, self.PB])
+        if self is self.ALL or self is self.SS:
+            replacements.extend([self.SS_HM, self.SS_SV, self.SS_CE, self.SS_DD, self.SS_PP,
+                                 self.SS_VC, self.SS_FF, self.SS_CA, self.SS_TE, self.SS_UL,
+                                 self.SS_SF, self.SS_BJ, self.SS_MC, self.SS_FL, self.SS_CG,
+                                 self.SS_DUDE, self.SS_PC, self.SS_RR, self.SS_SB, self.SS_ED,
+                                 self.SS_EE, self.SS_NW])
+        if self is self.ALL or self is self.OTHER:
+            replacements.extend([self.GIFT])
+        return replacements
+
+
     @classmethod
     def replace_shorthand(cls, eq_sources: list[Source]):
-        for shorthand, replacement_list in cls.ReplacementMapping.items():
+        print('eq_sources:', eq_sources)
+        replacement_mapping = {}
+        for eq_source in eq_sources:
+            if repl := eq_source.replacements():
+                replacement_mapping[eq_source] = repl
+
+        for shorthand, replacements in replacement_mapping.items():
             if shorthand in eq_sources:
                 eq_sources.remove(shorthand)
-                eq_sources.extend(replacement_list)
+                eq_sources.extend(replacements)
 
 
 
@@ -420,8 +438,25 @@ class SourceGroup(StrEnum):
     Premium = 'Preorder bonuses + Super Citizen Edition'
     Etc = 'Anniversary gifts and miscellanea'
 
-    def sources(self):
-        return getattr(Source, self.name)
+    def sources(self) -> list[Source]:
+        mapping = {
+            self.Basic: Source.BASE,
+            self.SuperDestroyer: Source.SDD,
+            self.Campaign: Source.EVENT,
+            self.Warbonds: Source.WAR,
+            self.Legendary: Source.LEG,
+            self.SuperStore: Source.SS,
+            self.Premium: Source.PAID,
+            self.Etc: Source.OTHER,
+        }
+        if self is self.All:
+            sources = [Source.ALL]
+            for sg, src in mapping.items():
+                sources.append(src)
+                sources.extend(src.replacements())
+            return sources
+        return [x := mapping[self]] + x.replacements()
+
 
     @classmethod
     def from_string(cls, sg: str) -> SourceGroup:
@@ -432,7 +467,7 @@ class SourceGroup(StrEnum):
         return cls.All
 
 
-class Passive(StrEnum, EnumEvalRepr):
+class Passive(EnumEvalRepr, StrEnum):
     Acclimated = "Acclimated"
     AdrenoDefibrillator = "Adreno-Defibrillator"
     AdvancedFiltration = "Advanced Filtration"
@@ -464,6 +499,10 @@ class Passive(StrEnum, EnumEvalRepr):
     TrueGrit = "True Grit"
     Unflinching = "Unflinching"
 
+    @classmethod
+    def elemental(cls):
+        return {cls.Inflammable, cls.Acclimated, cls.ElectricalConduit, cls.DesertStormer, cls.AdvancedFiltration}
+
     def __str__(self):
         return self.value
 
@@ -472,16 +511,16 @@ class Passive(StrEnum, EnumEvalRepr):
         match self:
             case self.Acclimated: s.extend([Style.Pyrotechnician, Style.Electrician, Style.Fumigator])
             case self.AdrenoDefibrillator: s.extend([Style.Survivalist, Style.Medic])
-            case self.AdvancedFiltration: s.extend([Style.Fumigator, Style.Trapper])
-            case self.BallisticPadding: s.extend(Style)
+            case self.AdvancedFiltration: s.extend([Style.Fumigator])
+            case self.BallisticPadding: s.extend(set(Style) - Style.elemental())
             case self.ConcussivePaddingGrenadier: s.extend([Style.Demolitionist, Style.Grenadier])
             case self.ConcussivePaddingHazmat: s.extend([Style.Demolitionist, Style.Fumigator, Style.Trapper])
             case self.ConcussivePaddingReinforced: s.extend([Style.Demolitionist, Style.Survivalist])
-            case self.DemocracyProtects: s.extend(Style)
-            case self.DesertStormer: s.extend([Style.Pyrotechnician, Style.Electrician, Style.Fumigator, Style.Grenadier, Style.Spotter])
+            case self.DemocracyProtects: s.extend(set(Style) - Style.elemental())
+            case self.DesertStormer: s.extend([Style.Pyrotechnician, Style.Electrician, Style.Fumigator])
             case self.ElectricalConduit: s.extend([Style.Electrician])
-            case self.EngineeringKit: s.extend([Style.Sniper, Style.Juggernaut, Style.Grenadier])
-            case self.ExtraPadding: s.extend(Style)
+            case self.EngineeringKit: s.extend([Style.Sniper, Style.Juggernaut, Style.Grenadier, Style.Engineer])
+            case self.ExtraPadding: s.extend(set(Style) - Style.elemental())
             case self.FeetFirst: s.extend([Style.Infiltrator, Style.Scout])
             case self.Fortified: s.extend([Style.Sniper, Style.Juggernaut, Style.Demolitionist, Style.Cleanser])
             case self.Gunslinger: s.extend([Style.Lawnmower, Style.Brawler, Style.Sheriff])
@@ -499,11 +538,12 @@ class Passive(StrEnum, EnumEvalRepr):
             case self.SiegeReady: s.extend([Style.Juggernaut, Style.Lawnmower, Style.Bouncer, Style.Sheriff, Style.Cleanser, Style.Brawler, Style.Sniper])
             case self.SupplementaryAdrenaline: s.extend([Style.Survivalist, Style.Medic])
             case self.TrueGrit: s.extend([Style.Juggernaut, Style.Sniper, Style.Logistician])
-            case self.Unflinching: s.extend(Style)
+            case self.Unflinching: s.extend([Style.Juggernaut, Style.Sheriff])
         return set(s)
 
 
 _Equipment = [
+    Armor('B-01 Tactical', Source.STOCK, Passive.ExtraPadding, Weight.Medium),
     Armor('AC-2 Obedient', Source.KZ, Passive.Acclimated, Weight.Light),
     Armor('AC-1 Dutiful', Source.KZ, Passive.Acclimated, Weight.Medium),
     Armor('AD-26 Bleeding Edge', Source.CG, Passive.AdrenoDefibrillator, Weight.Medium),
@@ -824,6 +864,9 @@ class Inventory:
         self.all_items = set(items or ())
         self._arrange_by_slot()
 
+    def __len__(self):
+        return len(self.all_items)
+
     def __repr__(self):
         return f'{self.__class__.__name__}({self.all_items!r})'
 
@@ -890,9 +933,11 @@ class Inventory:
             items.update(self.lookup_batch(list(names), by_name=True))
         return self.__class__(items)
 
-    def filter_armor(self, by_styles: set[Style]):
-        def predicate(item: EquipmentItem) -> bool:
-            return bool(item.styles & by_styles)
+    def filter_armor(self, by_styles: set[Style] | None = None,
+                     by_passives: set[Passive] | None = None):
+        def predicate(item: Armor) -> bool:
+            return bool(by_styles and (item.styles & by_styles)
+                        or (by_passives and (item.passive in by_passives)))
         return set(filter(predicate, self.armor))
 
     def filter_stratagems(self, by_types: Iterable[StratagemType] | None = None,
@@ -910,7 +955,7 @@ class Inventory:
         return set(filter(pred, self.stratagem))
 
     def update(self, other: Self):
-        self.all_items.update(other.all_items)
+        self.all_items.update(other.all_items if isinstance(other, self.__class__) else other)
         self._arrange_by_slot()
 
     def add(self, equipment: EquipmentItem | list[EquipmentItem]):
@@ -918,6 +963,7 @@ class Inventory:
             self.all_items.update(equipment)
         else:
             self.all_items.add(equipment)
+        self._arrange_by_slot()
 
     def remove(self, by_designation: str | list[str]):
         if isinstance(by_designation, str):
@@ -938,11 +984,11 @@ class Inventory:
         else:
             return None
         for item in self.all_items:
-            if by_name and item.name == cf:
+            if by_name and item.name.casefold() == cf:
                 return item
-            if by_designation and item.designation == cf:
+            if by_designation and item.designation.casefold() == cf:
                 return item
-            if item.shortname.startswith(cf):
+            if item.shortname.casefold().startswith(cf):
                 return item
         return None
 
@@ -954,17 +1000,15 @@ class Inventory:
         return out
 
     def ready(self):
-        if len(self.primary) < 4:
-            return False
-        if len(self.secondary) < 4:
-            return False
-        if len(self.throwable) < 4:
-            return False
-        if len(self.filter_stratagems({StratagemType.Defensive, StratagemType.Offensive})) < 4:
-            return False
-        return True
+        primary = len(self.primary) >= 1
+        secondary = len(self.secondary) >= 1
+        throwable = len(self.throwable) >= 1
+        stratagems = len(self.filter_stratagems({StratagemType.Defensive, StratagemType.Offensive})) >= 4
+        armor = len(self.armor) >= 1
+        booster = len(self.booster) >= 1
+        return primary and secondary and throwable and stratagems and armor and booster
 
 
 Everything = Inventory(_Equipment)
-BySource = {src: Everything.filter_items(by_source=src) for src in Source}
-ByStyle = {style: Everything.filter_items(by_style=style) for style in Style}
+BySource = {src: Inventory(Everything.filter_items(by_source=src)) for src in Source}
+ByStyle = {style: Inventory(Everything.filter_items(by_style=style)) for style in Style}

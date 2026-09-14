@@ -4,7 +4,9 @@ from enum import StrEnum
 from pathlib import Path
 
 import utils
-from inventory import Inventory, Everything, Source
+from inventory import Inventory, Everything, Source, Style, Slot
+from inventory import Primary, Secondary, Booster, Stratagem, Armor, Throwable
+from inventory import PrimaryType, SecondaryType, StratagemType, StratagemSubtype, Weight, Passive, ThrowableType
 from utils import prefix_match
 
 
