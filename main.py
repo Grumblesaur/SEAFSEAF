@@ -5,9 +5,8 @@ import discord
 import configuration
 from discord.ext import commands
 
+from registration import InventoryDatabase
 from exceptions import RandomizerError
-from randomizer import Randomizer
-from registration import PlayerRegistry, EquipmentCatalog
 
 
 class SEAFSEAF(commands.Bot):
@@ -17,10 +16,7 @@ class SEAFSEAF(commands.Bot):
 
         self.registry_files = config['paths']['registry']
         os.makedirs(self.registry_files, exist_ok=True)
-        self.registry = PlayerRegistry(Path(self.registry_files))
-        self.ods_file = config['paths']['source']
-        self.catalog = EquipmentCatalog(self.ods_file)
-        self.randomizer = Randomizer(self.registry, self.catalog)
+        self.registry = InventoryDatabase(Path(self.registry_files))
         self.prefix = config['config']['prefix']
         self.config = config
         intents = discord.Intents.default()

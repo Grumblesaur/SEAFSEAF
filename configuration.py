@@ -11,7 +11,6 @@ name = "Super Earth Armed Forces Surplus Equipment Allocation Facility"
 prefix = "+"
 
 [paths]
-source = "./loadout.ods"
 registry = "./registered"
 temp = "./tmp"
 

@@ -1,8 +1,25 @@
 import random
-from typing import Iterable, TypeVar
-from registration import PlayerRegistry, EquipmentCatalog
+import utils
+from enum import StrEnum
+from typing import TypeVar
+
 
 T = TypeVar('T')
+
+
+class MissionType(StrEnum):
+    Faction = 'faction'
+    Difficulty = 'difficulty'
+    Planet = 'planet'
+
+    @classmethod
+    def from_string(cls, s: str) -> MissionType:
+        cf = s.casefold()
+        for mt in cls:
+            if utils.prefix_match(mt, cf):
+                return mt
+        return cls.Faction
+
 
 def roll_against_odds(numerator: int, denominator: int) -> bool:
     return random.randint(1, denominator) <= numerator
@@ -160,26 +177,7 @@ class PlanetOrder:
         return self.message
 
 
-class Randomizer:
-    def __init__(self, player_registry: PlayerRegistry, equipment_catalog: EquipmentCatalog):
-        self.registry = player_registry
-        self.catalog = equipment_catalog
-
-    @staticmethod
-    def faction_order(*args, **kwargs) -> str:
-        return str(FactionOrder(*args, **kwargs))
-
-    @staticmethod
-    def difficulty_order(*args, **kwargs) -> str:
-        return str(DifficultyOrder(*args, **kwargs))
-
-    @staticmethod
-    def planet_order(*args, **kwargs) -> str:
-        return str(PlanetOrder(*args, **kwargs))
-
-    @staticmethod
-    def mission(*_args, **_kwargs) -> str:
-        mission_type = random.choice([
-            FactionOrder, DifficultyOrder, PlanetOrder
-        ])
-        return str(mission_type())
+class Mission:
+    Options = [DifficultyOrder, PlanetOrder, FactionOrder]
+    def __new__(cls) -> DifficultyOrder | PlanetOrder | FactionOrder:
+        return random.choice(cls.Options)()

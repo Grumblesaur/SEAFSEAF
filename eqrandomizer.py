@@ -1,82 +1,17 @@
 import operator
-import os
 from collections import Counter
-import datetime
 from enum import IntEnum
-from pathlib import Path
 
 import utils
 from inventory import Inventory, Everything, DefaultDiver, ByStyle
 import random
 from equipment import Style, Slot, EquipmentItem, Booster, StratagemSubtype, StratagemType, Primary, Secondary, \
-    Throwable, Stratagem, Source
+    Throwable, Stratagem
 from typing import TypeVar, Iterable
 
+from registration import InventoryDatabase
+
 T = TypeVar('T')
-
-
-class RegistrationMode(IntEnum):
-    Delete = -1
-    Replace = 0
-    Add = 1
-
-
-class InventoryDatabase:
-    DefaultSources = {Source.Stock, Source.HM, Source.PAC, Source.HG,
-                      Source.EB, Source.BR, Source.OC, Source.RW}
-    def __init__(self, path: Path):
-        self.path = path
-        self.registered = set()
-        for filename in os.listdir(self.path):
-            file = Path(filename)
-            self.registered.add(file.name.removesuffix(file.suffix))
-        self.cache = dict[str, Inventory]()
-        self.last_time_used = dict[str, datetime.datetime]()
-
-    def __contains__(self, handle: str) -> bool:
-        return handle in self.registered
-
-    def user_path(self, handle: str) -> Path:
-        return self.path / f'{handle}.txt'
-
-    def fetch(self, handle: str) -> Inventory:
-        self.touch(handle)
-        if not (path := self.user_path(handle)).exists():
-            self.register(handle, self.DefaultSources, rmode=RegistrationMode.Replace)
-        if (cached := self.cache.get(handle)) is not None:
-            return cached
-        with open(path, 'r', encoding='utf-8') as f:
-            cachable = eval(f.read())
-        self.touch(handle, cachable)
-        return cachable
-
-    def touch(self, handle: str, inventory: Inventory | None = None):
-        self.last_time_used[handle] = datetime.datetime.now()
-        if inventory is not None:
-            self.cache[handle] = inventory
-            with open(self.user_path(handle), 'w', encoding='utf-8') as f:
-                f.write(repr(inventory) + '\n')
-
-
-    def register(self, handle: str,
-                 sources: set[Source] | None = None,
-                 designations: set[Source] | None = None,
-                 names: set[Source] | None = None,
-                 rmode: RegistrationMode = RegistrationMode.Add):
-        match rmode:
-            case RegistrationMode.Delete:
-                self.registered.discard(handle)
-                self.user_path(handle).unlink(missing_ok=True)
-                return
-            case RegistrationMode.Add:
-                if handle in self.registered:
-                    inventory = self.fetch(handle)
-                    inventory += Everything.make_subset(sources, designations, names)
-                else:
-                    inventory = Everything.make_subset(self.DefaultSources, designations, names)
-            case RegistrationMode.Replace:
-                inventory = Everything.make_subset(sources, designations, names)
-        self.touch(handle, inventory)
 
 
 class ArmorMode(IntEnum):

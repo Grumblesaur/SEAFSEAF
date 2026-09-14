@@ -1,13 +1,495 @@
+import utils
+from enum import StrEnum, nonmember, IntEnum, auto, IntFlag
 from typing import Iterable, Self
+from exceptions import UnknownEquipmentSource, UnknownStratagemSubtype, UnknownArmorWeight
 
-from equipment import Style, Source, EquipmentItem, Slot, Booster, StratagemType, Odds
-from equipment import Primary, PrimaryType
-from equipment import Secondary, SecondaryType
-from equipment import Throwable, ThrowableType
-from equipment import Stratagem, StratagemSubtype
-from equipment import Armor, Passive, Weight
+
+class EnumEvalRepr:
+    name: str
+    def __repr__(self):
+        return f'{self.__class__.__name__}.{self.name}'
+
+
+class PrimaryType(StrEnum, EnumEvalRepr):
+    AR = "Assault Rifle"
+    MR = "Marksman Rifle"
+    SMG = "Submachine Gun"
+    SG = "Shotgun"
+    EXPL = "Explosive"
+    EB = "Energy-Based"
+    SP = "Special"
+
+    @classmethod
+    def from_string(cls, primary_type: str):
+        s = primary_type.casefold()
+        for pt in cls:
+            if pt.name.casefold().startswith(s) or pt.value.casefold().startswith(s):
+                return pt
+        return cls.AR
+
+
+class SecondaryType(IntEnum, EnumEvalRepr):
+    Pistol = 1
+    Melee = 2
+    Special = 3
+
+    @classmethod
+    def from_string(cls, secondary_type: str):
+        s = secondary_type.casefold()
+        for st in cls:
+            if st.name.casefold().startswith(s):
+                return s
+        return cls.Pistol
+
+
+class ThrowableType(StrEnum, EnumEvalRepr):
+    STD = 'Standard'
+    SL = 'Special'
+
+    @classmethod
+    def from_string(cls, throwable_type: str):
+        s = throwable_type.casefold()
+        for tt in cls:
+            if tt.name.casefold().startswith(s) or tt.value.casefold().startswith(s):
+                return tt
+        return cls.STD
+
+
+class Slot(StrEnum, EnumEvalRepr):
+    Primary = "primary"
+    Secondary = "secondary"
+    Throwable = "throwable"
+    Booster = "booster"
+    Armor = "armor"
+    Stratagem = "stratagem"
+
+    @classmethod
+    def from_string(cls, s: str) -> Slot:
+        cf = s.casefold()
+        for ev in cls:
+            if utils.prefix_match(ev, cf):
+                return ev
+        return cls.Stratagem
+
+    def required(self):
+        if self is self.Stratagem:
+            return 4
+        return 1
+
+    def sort_key(self):
+        match self:
+            case self.Primary:
+                return 1
+            case self.Secondary:
+                return 2
+            case self.Throwable:
+                return 3
+            case self.Stratagem:
+                return 4
+            case self.Booster:
+                return 5
+            case self.Armor:
+                return 6
+
+
+class StratagemType(IntEnum, EnumEvalRepr):
+    Supply = 1
+    Vehicle = 2
+    Defensive = 3
+    Offensive = 4
+
+    @classmethod
+    def from_string(cls, stratagem_type: str):
+        s = stratagem_type.casefold()
+        for st in cls:
+            if st.name.casefold().startswith(s):
+                return st
+        return cls.Offensive
+
+
+class StratagemSubtype(IntFlag, EnumEvalRepr):
+    Weapon = auto()
+    Backpack = auto()
+    Exosuit = auto()
+    FRV = auto()
+    Tank = auto()
+    Sentry = auto()
+    Emplacement = auto()
+    Minefield = auto()
+    Eagle = auto()
+    Orbital = auto()
+
+    BackpackWeapon = Weapon | Backpack
+
+    def type(self) -> StratagemType:
+        st = StratagemType.Offensive
+        match self:
+            case self.Weapon | self.Backpack | self.BackpackWeapon:
+                st = StratagemType.Supply
+            case self.Exosuit | self.FRV | self.Tank:
+                st = StratagemType.Vehicle
+            case self.Sentry | self.Emplacement | self.Minefield:
+                st = StratagemType.Defensive
+        return st
+
+    @classmethod
+    def from_string(cls, subtype: str):
+        cf = subtype.casefold()
+        for sst in cls:
+            if sst.name.casefold().startswith(cf):
+                return sst
+        raise UnknownStratagemSubtype(subtype)
+
+
+class Weight(IntEnum, EnumEvalRepr):
+    Light = 1
+    Medium = 2
+    Heavy = 3
+
+    def __str__(self) -> str:
+        return self.name
+
+    @classmethod
+    def from_string(cls, weight: str):
+        cf = weight.casefold()
+        for wt in cls:
+            if wt.name.casefold().startswith(cf):
+                return wt
+        return UnknownArmorWeight(weight)
+
+
+class Style(StrEnum, EnumEvalRepr):
+    Pilot = 'extraction, exosuits, and critical mission cargo'
+    Driver = 'leadership, navigation, and wheeled vehicles'
+    Cleanser = 'plasma weapons'
+    Pyrotechnician = 'flame weapons'
+    Demolitionist = 'explosives and destroying enemy structures'
+    Electrician = 'arc and EMP weapons'
+    Optician = 'lasers and heat-limited weapons'
+    Fumigator = 'gas weapons'
+    Sniper = 'long-range and scoped weapons'
+    Infiltrator = 'smoke, melee weapons, and quiet firearms'
+    Spotter = 'eagle and orbital stratagems'
+    Scout = 'fast intelligence gathering'
+    Engineer = 'drones, sentries, shields, and operating terminals'
+    Medic = 'stims, support, and non-weapon backpacks'
+    Grenadier = 'throwables and firearm-launched explosives'
+    Trapper = 'mines and weapons with gas, stun, or EMP effects'
+    Logistician = 'supplies, large magazines, and team reloads'
+    Soloist = 'heat sink and ammoless weapons, drones, non-weapon backpacks, and large magazines'
+    Brawler = 'short-range firearms and melee weapons'
+    Juggernaut = 'heavy armor penetration and clearing armored cavalry'
+    Lawnmower = 'light armor penetration and clearing light infantry'
+    Bouncer = 'medium armor penetration and clearing heavy infantry'
+    Sheriff = 'marksman rifles, sidearms, and urban combat'
+    Survivalist = 'shrugging off damage'
+    Artillerist = 'indirect fire and target suppression'
+    Tracker = 'laser-guided or homing munitions'
+    Helldiver = 'bringing our foes to justice'
+
+    Elemental = nonmember({Pyrotechnician, Fumigator, Electrician})
+
+class Odds(IntEnum, EnumEvalRepr):
+    Common = 9
+    Special = 3
+    Rare = 1
+
+
+class EquipmentItem:
+    def __init__(self, name: str, source: Source, styles: set[Style], slot: Slot):
+        self.name = name
+        self.styles = styles
+        self.styles.add(Style.Helldiver)
+        self.source = source
+        self.slot = slot
+        self.designation = self.name.split(' ', 1)[0]
+
+    def __hash__(self):
+        return hash((self.__class__.__name__, self.slot, self.name))
+
+    def __str__(self):
+        return self.name
+
+    def _args(self):
+        return self.name, self.source, self.styles, self.slot
+
+    def __repr__(self):
+        clsname = self.__class__.__name__
+        repr_args = [repr(a) for a in self._args()]
+        return f'{clsname}({", ".join(repr_args)})'
+
+
+class Armor(EquipmentItem):
+    def __init__(self, name: str, source: Source, passive: Passive, weight: Weight):
+        super().__init__(name, source, passive.styles(), Slot.Armor)
+        self.slot_type = Slot.Armor
+        self.passive = passive
+        self.weight = weight
+
+    def __str__(self):
+        return f'{self.name} [{self.weight}/{self.passive}]'
+
+    def _repr_args(self):
+        return self.name, self.source, self.passive, self.weight
+
+
+class Booster(EquipmentItem):
+    def __init__(self, name: str, source: Source, styles: set[Style]):
+        super().__init__(name, source, styles, Slot.Booster)
+
+    def _repr_args(self):
+        return self.name, self.source, self.styles
+
+
+class Primary(EquipmentItem):
+    def __init__(self, name: str, source: Source, ptype: PrimaryType, styles: set[Style]):
+        super().__init__(name, source, styles, Slot.Primary)
+        self.type = ptype
+
+    def _repr_args(self):
+        return self.name, self.source, self.type, self.styles
+
+
+class Secondary(EquipmentItem):
+    def __init__(self, name: str, source: Source, stype: SecondaryType, styles: set[Style]):
+        super().__init__(name, source, styles, Slot.Secondary)
+        self.type = stype
+
+    def _repr_args(self):
+        return self.name, self.source, self.type, self.styles
+
+
+class Throwable(EquipmentItem):
+    def __init__(self, name: str, source: Source, ttype: ThrowableType, styles: set[Style]):
+        super().__init__(name, source, styles, Slot.Throwable)
+        self.type = ttype
+
+    def _repr_args(self):
+        return self.name, self.source, self.type, self.styles
+
+
+class Stratagem(EquipmentItem):
+    def __init__(self, name: str, source: Source, sst: StratagemSubtype, styles: set[Style]):
+        super().__init__(name, source, styles, Slot.Stratagem)
+        self.type = sst.type()
+        self.subtype = sst
+
+    def _repr_args(self):
+        return self.name, self.source, self.subtype, self.styles
+
 
 AnyEquipment = Primary | Secondary | Throwable | Stratagem | Armor | Booster | EquipmentItem
+
+
+class Source(StrEnum, EnumEvalRepr):
+    BASE = '[Equipment Included with the Game]'
+    STOCK = 'Default Equipment'
+    HM = 'Helldivers Mobilize'
+
+    SDD = '[All Super Destroyer Equipment]'
+    PAC = 'Patriotic Administration Center'
+    EB = 'Engineering Bay'
+    HG = 'Hangar'
+    BR = 'Bridge'
+    RW = 'Robotics Workshop'
+    OC = 'Orbital Cannons'
+
+    EVENT = '[All Event Rewards]'
+    EV_CT = 'Census Thunder'
+    EV_CF = 'Celestial Fence'
+    EV_LI = 'Lightning Intercept'
+    EV_PE = 'Permanent Enclosure'
+    EV_VP = 'Void Piercer'
+    EV_CH = 'Counterdissident Hammer'
+    EV_BE = 'Blazing Electorate'
+
+    WAR = '[All Standard Warbonds]'
+    SV = 'Steeled Veterans'
+    CE = 'Cutting Edge'
+    DD = 'Democratic Detonation'
+    PP = 'Polar Patriots'
+    VC = 'Viper Commandos'
+    FF = "Freedom's Flame"
+    CA = 'Chemical Agents'
+    TE = 'Truth Enforcers'
+    UL = 'Urban Legends'
+    SF = 'Servants of Freedom'
+    BJ = 'Borderline Justice'
+    MC = 'Masters of Ceremony'
+    FL = 'Force of Law'
+    CG = 'Control Group'
+    DUDE = 'Dust Devils'
+    PC = 'Python Commandos'
+    RR = 'Redacted Regiment'
+    SB = 'Siege Breakers'
+    ED = 'Entrenched Division'
+    EE = 'Exo Experts'
+
+    # Legendary warbonds
+    LEG = '[All Legendary Warbonds]'
+    ODST = 'Obedient Democracy Support Troopers'
+    KZ = 'Righteous Revenants'
+    WH = "Castellan's Creed"
+
+    # Premium content
+    PAID = '[All Paid Content]'
+    SCE = 'Super Citizen Edition'
+    PB = 'Preorder Bonus'
+
+    SS = '[All Super Store Pages]'
+    SS_HM = '[$] Helldivers Mobilize'
+    SS_SV = '[$] Steeled Veterans'
+    SS_CE = '[$] Cutting Edge'
+    SS_DD = '[$] Democratic Detonation'
+    SS_PP = '[$] Polar Patriots'
+    SS_VC = '[$] Viper Commandos'
+    SS_FF = "[$] Freedom's Flame"
+    SS_CA = "[$] Chemical Agents"
+    SS_TE = '[$] Truth Enforcers'
+    SS_UL = '[$] Urban Legends'
+    SS_SF = '[$] Servants of Freedom'
+    SS_BJ = '[$] Borderline Justice'
+    SS_MC = '[$] Masters of Ceremony'
+    SS_FL = '[$] Force of Law'
+    SS_CG = '[$] Control Group'
+    SS_DUDE = '[$] Dust Devils'
+    SS_PC = '[$] Python Commandos'
+    SS_RR = '[$] Redacted Regiment'
+    SS_SB = '[$] Siege Breakers'
+    SS_ED = '[$] Entrenched Division'
+    SS_EE = '[$] Exo Experts'
+    SS_NW = '[$] Non-Warbond Pages'
+
+    OTHER = '[Other Equipment]'
+    GIFT = 'Granted by Arrowhead'
+
+    ALL = '[[All Equipment]]'
+
+    Basic = nonmember([BASE, STOCK, HM])
+    Campaign = nonmember([EVENT, EV_CT, EV_CF, EV_LI, EV_PE, EV_VP, EV_CH, EV_BE])
+    Warbonds = nonmember([WAR, SV, CE, DD, PP, VC, FF, CA, TE, UL, SF,
+                          BJ, MC, FL, CG, DUDE, PC, RR, SB, ED, EE])
+    Legendary = nonmember([LEG, ODST, KZ, WH])
+    Premium = nonmember([PAID, SCE, PB])
+    SuperStore = nonmember([SS, SS_HM, SS_SV, SS_CE, SS_DD, SS_PP, SS_VC, SS_FF, SS_CA, SS_TE, SS_UL,
+                         SS_SF, SS_BJ, SS_MC, SS_FL, SS_CG, SS_DUDE, SS_PC, SS_RR, SS_SB,
+                         SS_ED, SS_EE, SS_NW])
+    SuperDestroyer = nonmember([SDD, PAC, EB, HG, BR, RW, OC])
+    Etc = nonmember([OTHER, GIFT])
+    All = nonmember([ALL] + Basic + SuperDestroyer + Campaign + Warbonds + Legendary + Premium + SuperStore)
+
+    ReplacementMapping = nonmember({src_grp[0]: src_grp[1:] for src_grp in [Basic, SuperDestroyer, Warbonds,
+                                    Campaign, Legendary, Premium, SuperStore, Etc, All]})
+
+    @classmethod
+    def from_string(cls, src: str) -> Source:
+        cf = src.casefold()
+        for eq_src in cls:
+            if eq_src.name.casefold().startswith(cf) or eq_src.value.casefold().startswith(cf):
+                return eq_src
+        raise UnknownEquipmentSource(f'No matching equipment source for `{src}`. Use'
+                                     f' the command `viewsources` for information on equipment availability.')
+
+    @classmethod
+    def replace_shorthand(cls, eq_sources: list[Source]):
+        for shorthand, replacement_list in cls.ReplacementMapping.items():
+            if shorthand in eq_sources:
+                eq_sources.remove(shorthand)
+                eq_sources.extend(replacement_list)
+
+
+class SourceGroup(StrEnum):
+    All = 'All equipment sources'
+    Basic = 'Stock equipment sources + Helldivers Mobilize'
+    SuperDestroyer = 'Super destroyer stratagems'
+    Campaign = 'Campaign rewards'
+    Warbonds = 'Regular warbonds'
+    Legendary = 'Legendary warbonds'
+    SuperStore = 'Super store pages'
+    Premium = 'Preorder bonuses + Super Citizen Edition'
+    Etc = 'Anniversary gifts and miscellanea'
+
+    def sources(self):
+        return getattr(Source, self.name)
+
+    @classmethod
+    def from_string(cls, sg: str) -> SourceGroup:
+        cf = sg.casefold()
+        for ev in cls:
+            if utils.prefix_match(ev, cf):
+                return ev
+        return cls.All
+
+
+class Passive(StrEnum, EnumEvalRepr):
+    Acclimated = "Acclimated"
+    AdrenoDefibrillator = "Adreno-Defibrillator"
+    AdvancedFiltration = "Advanced Filtration"
+    BallisticPadding = "Ballistic Padding"
+    ConcussivePaddingGrenadier = "Concussive Padding, Grenadier"
+    ConcussivePaddingHazmat = "Concussive Padding, Hazmat"
+    ConcussivePaddingReinforced = "Concussive Padding, Reinforced"
+    DemocracyProtects = "Democracy Protects"
+    DesertStormer = "Desert Stormer"
+    ElectricalConduit = "Electrical Conduit"
+    EngineeringKit = "Engineering Kit"
+    ExtraPadding = "Extra Padding"
+    FeetFirst = "Feet First"
+    Fortified = "Fortified"
+    Gunslinger = "Gunslinger"
+    Inflammable = "Inflammable"
+    IntegratedExplosives = "Integrated Explosives"
+    KineticDisplacementMitigation = "Kinetic Displacement Mitigation"
+    MedKit = "Med-Kit"
+    Oxygenator = "Oxygenator"
+    PeakPhysique = "Peak Physique"
+    ReducedSignature = "Reduced Signature"
+    ReinforcedEpaulettes = "Reinforced Epaulettes"
+    RockSolid = "Rock Solid"
+    Scout = "Scout"
+    ServoAssisted = "Servo-Assisted"
+    SiegeReady = "Siege-Ready"
+    SupplementaryAdrenaline = "Supplementary Adrenaline"
+    TrueGrit = "True Grit"
+    Unflinching = "Unflinching"
+
+    def __str__(self):
+        return self.value
+
+    def styles(self) -> set[Style]:
+        s = []
+        match self:
+            case self.Acclimated: s.extend([Style.Pyrotechnician, Style.Electrician, Style.Fumigator])
+            case self.AdrenoDefibrillator: s.extend([Style.Survivalist, Style.Medic])
+            case self.AdvancedFiltration: s.extend([Style.Fumigator, Style.Trapper])
+            case self.BallisticPadding: s.extend(Style)
+            case self.ConcussivePaddingGrenadier: s.extend([Style.Demolitionist, Style.Grenadier])
+            case self.ConcussivePaddingHazmat: s.extend([Style.Demolitionist, Style.Fumigator, Style.Trapper])
+            case self.ConcussivePaddingReinforced: s.extend([Style.Demolitionist, Style.Survivalist])
+            case self.DemocracyProtects: s.extend(Style)
+            case self.DesertStormer: s.extend([Style.Pyrotechnician, Style.Electrician, Style.Fumigator, Style.Grenadier, Style.Spotter])
+            case self.ElectricalConduit: s.extend([Style.Electrician])
+            case self.EngineeringKit: s.extend([Style.Sniper, Style.Juggernaut, Style.Grenadier])
+            case self.ExtraPadding: s.extend(Style)
+            case self.FeetFirst: s.extend([Style.Infiltrator, Style.Scout])
+            case self.Fortified: s.extend([Style.Sniper, Style.Juggernaut, Style.Demolitionist, Style.Cleanser])
+            case self.Gunslinger: s.extend([Style.Lawnmower, Style.Brawler, Style.Sheriff])
+            case self.Inflammable: s.append(Style.Pyrotechnician)
+            case self.IntegratedExplosives: s.extend([Style.Demolitionist, Style.Grenadier])
+            case self.KineticDisplacementMitigation: s.extend([Style.Pyrotechnician, Style.Survivalist])
+            case self.MedKit: s.extend([Style.Medic, Style.Survivalist, Style.Soloist])
+            case self.Oxygenator: s.extend([Style.Scout, Style.Infiltrator, Style.Soloist, Style.Sheriff])
+            case self.PeakPhysique: s.extend([Style.Brawler, Style.Sniper, Style.Infiltrator, Style.Juggernaut, Style.Bouncer, Style.Pilot, Style.Driver])
+            case self.ReducedSignature: s.extend([Style.Scout, Style.Infiltrator])
+            case self.ReinforcedEpaulettes: s.extend([Style.Survivalist, Style.Brawler, Style.Infiltrator])
+            case self.RockSolid: s.extend([Style.Brawler, Style.Infiltrator, Style.Bouncer])
+            case self.Scout: s.extend([Style.Scout, Style.Infiltrator, Style.Spotter])
+            case self.ServoAssisted: s.extend([Style.Grenadier, Style.Spotter])
+            case self.SiegeReady: s.extend([Style.Juggernaut, Style.Lawnmower, Style.Bouncer, Style.Sheriff, Style.Cleanser, Style.Brawler, Style.Sniper])
+            case self.SupplementaryAdrenaline: s.extend([Style.Survivalist, Style.Medic])
+            case self.TrueGrit: s.extend([Style.Juggernaut, Style.Sniper, Style.Logistician])
+            case self.Unflinching: s.extend(Style)
+        return set(s)
 
 
 _Equipment = [
@@ -29,8 +511,8 @@ _Equipment = [
     Armor('DP-53 Savior of the Free', Source.SCE, Passive.DemocracyProtects, Weight.Medium),
     Armor('DP-40 Hero of the Federation', Source.HM, Passive.DemocracyProtects, Weight.Medium),
     Armor('DP-11 Champion of the People', Source.HM, Passive.DemocracyProtects, Weight.Medium),
-    Armor('DP-00 Tactical', Source.Stock, Passive.DemocracyProtects, Weight.Medium),
-    Armor('B-22 Model Citizen', Source.EV, Passive.DemocracyProtects, Weight.Medium),
+    Armor('DP-00 Tactical', Source.STOCK, Passive.DemocracyProtects, Weight.Medium),
+    Armor('B-22 Model Citizen', Source.GIFT, Passive.DemocracyProtects, Weight.Medium),
     Armor('DS-10 Big Game Hunter', Source.SS_DUDE, Passive.DesertStormer, Weight.Light),
     Armor('DS-191 Scorpion', Source.DUDE, Passive.DesertStormer, Weight.Medium),
     Armor("DS-42 Federation's Blade", Source.DUDE, Passive.DesertStormer, Weight.Heavy),
@@ -50,7 +532,7 @@ _Equipment = [
     Armor('TR-7 Ambassador of the Brand', Source.PB, Passive.ExtraPadding, Weight.Medium),
     Armor('TR-9 Cavalry of Democracy', Source.PB, Passive.ExtraPadding, Weight.Medium),
     Armor('CW-9 White Wolf', Source.SS_PP, Passive.ExtraPadding, Weight.Medium),
-    Armor('TR-40 Gold Eagle', Source.EV, Passive.ExtraPadding, Weight.Medium),
+    Armor('TR-40 Gold Eagle', Source.GIFT, Passive.ExtraPadding, Weight.Medium),
     Armor('B-27 Fortified Commando', Source.SS_SV, Passive.ExtraPadding, Weight.Heavy),
     Armor('A-9 Helljumper', Source.ODST, Passive.FeetFirst, Weight.Medium),
     Armor('A-35 Recon', Source.ODST, Passive.FeetFirst, Weight.Medium),
@@ -72,9 +554,9 @@ _Equipment = [
     Armor('IE-57 Hell Bent', Source.SS_SF, Passive.IntegratedExplosives, Weight.Light),
     Armor('IE-3 Martyr', Source.SF, Passive.IntegratedExplosives, Weight.Medium),
     Armor('IE-12 Righteous', Source.SF, Passive.IntegratedExplosives, Weight.Medium),
-    Armor('KDM-500 Outrider', Source.EV, Passive.KineticDisplacementMitigation, Weight.Heavy),
+    Armor('KDM-500 Outrider', Source.EV_PE, Passive.KineticDisplacementMitigation, Weight.Heavy),
     Armor('CM-21 Trench Paramedic', Source.SS_HM, Passive.MedKit, Weight.Light),
-    Armor('TR-117 Alpha Commander', Source.Stock, Passive.MedKit, Weight.Medium),
+    Armor('TR-117 Alpha Commander', Source.STOCK, Passive.MedKit, Weight.Medium),
     Armor('CM-09 Bonesnapper', Source.HM, Passive.MedKit, Weight.Medium),
     Armor('CM-14 Physician', Source.HM, Passive.MedKit, Weight.Medium),
     Armor('CM-10 Clinician', Source.SS_DD, Passive.MedKit, Weight.Medium),
@@ -116,7 +598,7 @@ _Equipment = [
     Armor('UF-16 Inspector', Source.TE, Passive.Unflinching, Weight.Light),
     Armor('UF-84 Doubt Killer', Source.SS_TE, Passive.Unflinching, Weight.Medium),
     Armor('UF-50 Bloodhound', Source.TE, Passive.Unflinching, Weight.Medium),
-    Primary('AR-23 Liberator', Source.Stock, PrimaryType.AR, {Style.Lawnmower, Style.Soloist}),
+    Primary('AR-23 Liberator', Source.STOCK, PrimaryType.AR, {Style.Lawnmower, Style.Soloist}),
     Primary('AR-23P Liberator Penetrator', Source.HM, PrimaryType.AR, {Style.Bouncer}),
     Primary('AR-23C Liberator Concussive', Source.SV, PrimaryType.AR, {Style.Trapper}),
     Primary('StA-52 Assault Rifle', Source.KZ, PrimaryType.AR, {Style.Lawnmower}),
@@ -129,8 +611,8 @@ _Equipment = [
     Primary('AR/GL-21 One-Two', Source.PC, PrimaryType.AR, {Style.Demolitionist, Style.Bouncer, Style.Grenadier, Style.Lawnmower}),
     Primary('BR-14 Adjudicator', Source.DD, PrimaryType.AR, {Style.Bouncer}),
     Primary('R-2 Amendment', Source.MC, PrimaryType.MR, {Style.Sheriff, Style.Sniper, Style.Brawler, Style.Infiltrator}),
-    Primary('R-2124 Constitution', Source.Stock, PrimaryType.MR, {Style.Sheriff, Style.Sniper, Style.Brawler, Style.Infiltrator, Style.Bouncer}),
-    Primary('R-4 Hyena', Source.EV, PrimaryType.MR, {Style.Bouncer, Style.Sniper, Style.Sheriff}),
+    Primary('R-2124 Constitution', Source.STOCK, PrimaryType.MR, {Style.Sheriff, Style.Sniper, Style.Brawler, Style.Infiltrator, Style.Bouncer}),
+    Primary('R-4 Hyena', Source.EV_CF, PrimaryType.MR, {Style.Bouncer, Style.Sniper, Style.Sheriff}),
     Primary('R-6 Deadeye', Source.BJ, PrimaryType.MR, {Style.Sheriff, Style.Brawler, Style.Infiltrator}),
     Primary('R-63 Diligence', Source.HM, PrimaryType.MR, {Style.Sheriff, Style.Sniper}),
     Primary('R-63CS Diligence Counter Sniper', Source.HM, PrimaryType.MR, {Style.Sheriff, Style.Sniper, Style.Bouncer}),
@@ -171,7 +653,7 @@ _Equipment = [
     Secondary('M6C/SOCOM Pistol', Source.ODST, SecondaryType.Pistol, {Style.Infiltrator, Style.Scout}),
     Secondary('P-113 Verdict', Source.PP, SecondaryType.Pistol, {Style.Bouncer, Style.Soloist, Style.Engineer}),
     Secondary('P-19 Redeemer', Source.HM, SecondaryType.Pistol, {Style.Lawnmower, Style.Soloist, Style.Engineer}),
-    Secondary('P-2 Peacemaker', Source.Stock, SecondaryType.Pistol, {Style.Lawnmower, Style.Soloist, Style.Engineer}),
+    Secondary('P-2 Peacemaker', Source.STOCK, SecondaryType.Pistol, {Style.Lawnmower, Style.Soloist, Style.Engineer}),
     Secondary('P-4 Senator', Source.SV, SecondaryType.Pistol, {Style.Juggernaut, Style.Soloist, Style.Sniper, Style.Sheriff}),
     Secondary('P-69 Veto', Source.ED, SecondaryType.Pistol, {Style.Trapper, Style.Bouncer, Style.Sheriff}),
     Secondary('P-92 Warrant', Source.FL, SecondaryType.Pistol, {Style.Tracker, Style.Bouncer}),
@@ -193,7 +675,7 @@ _Equipment = [
     Secondary('PLAS-15 Loyalist', Source.TE, SecondaryType.Special, {Style.Cleanser, Style.Demolitionist, Style.Engineer, Style.Bouncer}),
     Secondary('SG-22 Bushwhacker', Source.VC, SecondaryType.Special, {Style.Brawler, Style.Lawnmower}),
     Throwable('G-10 Incendiary', Source.SV, ThrowableType.STD, {Style.Pyrotechnician, Style.Bouncer, Style.Grenadier, Style.Demolitionist}),
-    Throwable('G-12 High Explosive', Source.Stock, ThrowableType.STD, {Style.Grenadier, Style.Demolitionist, Style.Juggernaut}),
+    Throwable('G-12 High Explosive', Source.STOCK, ThrowableType.STD, {Style.Grenadier, Style.Demolitionist, Style.Juggernaut}),
     Throwable('G-6 Frag', Source.HM, ThrowableType.STD, {Style.Grenadier, Style.Lawnmower, Style.Bouncer, Style.Demolitionist}),
     Throwable('G-7 Pineapple', Source.DUDE, ThrowableType.STD, {Style.Grenadier, Style.Lawnmower, Style.Bouncer, Style.Demolitionist}),
     Throwable('TED-63 Dynamite', Source.BJ, ThrowableType.STD, {Style.Grenadier, Style.Juggernaut, Style.Demolitionist, Style.Logistician, Style.Engineer}),
@@ -236,7 +718,7 @@ _Equipment = [
     Stratagem('M-1000 Maxigun', Source.PC, StratagemSubtype.BackpackWeapon, {Style.Bouncer, Style.Logistician, Style.Lawnmower}),
     Stratagem('M-105 Stalwart', Source.PAC, StratagemSubtype.Weapon, {Style.Lawnmower, Style.Logistician, Style.Soloist}),
     Stratagem('MG-206 Heavy Machine Gun', Source.PAC, StratagemSubtype.Weapon, {Style.Lawnmower, Style.Logistician, Style.Soloist, Style.Juggernaut, Style.Bouncer}),
-    Stratagem('MG-43 Machine Gun', Source.Stock, StratagemSubtype.Weapon, {Style.Lawnmower, Style.Bouncer, Style.Logistician, Style.Soloist}),
+    Stratagem('MG-43 Machine Gun', Source.STOCK, StratagemSubtype.Weapon, {Style.Lawnmower, Style.Bouncer, Style.Logistician, Style.Soloist}),
     Stratagem('MGX-42 Bullet Storm', Source.EE, StratagemSubtype.Weapon, {Style.Lawnmower, Style.Logistician, Style.Soloist, Style.Scout}),
     Stratagem('MLS-4X Commando', Source.PAC, StratagemSubtype.Weapon, {Style.Artillerist, Style.Tracker, Style.Juggernaut, Style.Demolitionist}),
     Stratagem('MS-11 Solo Silo', Source.DUDE, StratagemSubtype.Weapon, {Style.Artillerist, Style.Tracker, Style.Sniper, Style.Juggernaut, Style.Demolitionist}),
@@ -255,14 +737,14 @@ _Equipment = [
     Stratagem('Orbital Gatling Barrage', Source.OC, StratagemSubtype.Orbital, {Style.Spotter, Style.Scout, Style.Artillerist, Style.Medic, Style.Engineer, Style.Soloist}),
     Stratagem('Orbital Laser', Source.OC, StratagemSubtype.Orbital, {Style.Spotter, Style.Optician, Style.Juggernaut, Style.Demolitionist, Style.Pyrotechnician}),
     Stratagem('Orbital Napalm Barrage', Source.OC, StratagemSubtype.Orbital, {Style.Spotter, Style.Pyrotechnician, Style.Juggernaut, Style.Lawnmower, Style.Bouncer, Style.Artillerist, Style.Soloist}),
-    Stratagem('Orbital Precision Strike', Source.Stock, StratagemSubtype.Orbital, {Style.Spotter, Style.Medic, Style.Engineer, Style.Artillerist, Style.Demolitionist}),
+    Stratagem('Orbital Precision Strike', Source.STOCK, StratagemSubtype.Orbital, {Style.Spotter, Style.Medic, Style.Engineer, Style.Artillerist, Style.Demolitionist}),
     Stratagem('Orbital Railcannon Strike', Source.OC, StratagemSubtype.Orbital, {Style.Spotter, Style.Artillerist, Style.Juggernaut, Style.Sniper, Style.Tracker}),
     Stratagem('Orbital Smoke Strike', Source.BR, StratagemSubtype.Orbital, {Style.Infiltrator, Style.Spotter, Style.Engineer, Style.Medic}),
     Stratagem('Eagle 110mm Rocket Pods', Source.HG, StratagemSubtype.Eagle, {Style.Juggernaut, Style.Tracker, Style.Spotter, Style.Demolitionist}),
     Stratagem('Eagle 500kg Bomb', Source.HG, StratagemSubtype.Eagle, {Style.Demolitionist, Style.Spotter, Style.Juggernaut}),
     Stratagem('Eagle Airstrike', Source.HG, StratagemSubtype.Eagle, {Style.Demolitionist, Style.Spotter, Style.Juggernaut, Style.Bouncer, Style.Lawnmower}),
     Stratagem('Eagle Cluster Bomb', Source.HG, StratagemSubtype.Eagle, {Style.Bouncer, Style.Lawnmower, Style.Spotter}),
-    Stratagem('Eagle Gas Airstrike', Source.EV, StratagemSubtype.Eagle, {Style.Fumigator, Style.Spotter, Style.Trapper, Style.Lawnmower, Style.Juggernaut, Style.Bouncer, Style.Scout}),
+    Stratagem('Eagle Gas Airstrike', Source.EV_CH, StratagemSubtype.Eagle, {Style.Fumigator, Style.Spotter, Style.Trapper, Style.Lawnmower, Style.Juggernaut, Style.Bouncer, Style.Scout}),
     Stratagem('Eagle Napalm Airstrike', Source.HG, StratagemSubtype.Eagle, {Style.Pyrotechnician, Style.Spotter, Style.Juggernaut, Style.Bouncer, Style.Lawnmower}),
     Stratagem('Eagle Smoke Strike', Source.HG, StratagemSubtype.Eagle, {Style.Infiltrator, Style.Scout, Style.Engineer, Style.Medic, Style.Spotter}),
     Stratagem('Eagle Strafing Run', Source.HG, StratagemSubtype.Eagle, {Style.Spotter, Style.Demolitionist, Style.Juggernaut, Style.Bouncer, Style.Lawnmower}),
@@ -302,7 +784,7 @@ _Equipment = [
     Stratagem('EXO-51 Lumberer Exosuit', Source.EE, StratagemSubtype.Exosuit, {Style.Pilot, Style.Juggernaut, Style.Pyrotechnician}),
     Stratagem('EXO-55 Breakthrough Exosuit', Source.EE, StratagemSubtype.Exosuit, {Style.Pilot, Style.Artillerist, Style.Sheriff, Style.Engineer}),
     Stratagem('M-102 Gunner FRV', Source.HG, StratagemSubtype.FRV, {Style.Driver, Style.Juggernaut}),
-    Stratagem('M-103 Supply FRV', Source.EV, StratagemSubtype.FRV, {Style.Driver, Style.Logistician}),
+    Stratagem('M-103 Supply FRV', Source.EV_CT, StratagemSubtype.FRV, {Style.Driver, Style.Logistician}),
     # Stratagem('M-104 Incinerator FRV', Source.EV, StratagemSubtype.FRV, {Style.Driver, Style.Pyrotechnician}),
     Stratagem('TD-220 Bastion MK XVI', Source.HG, StratagemSubtype.Tank, {Style.Driver}),
     Booster('Hellpod Space Optimization', Source.HM, {Style.Medic, Style.Logistician, Style.Soloist, Style.Engineer, Style.Driver}),
@@ -336,6 +818,23 @@ class Inventory:
 
     def __iter__(self):
         yield from self.all_items
+
+    def __add__(self, other: Self) -> Self:
+        return self.__class__(self.all_items | other.all_items)
+
+    def __sub__(self, other: Self) -> Self:
+        return self.__class__(self.all_items - other.all_items)
+
+    def __or__(self, other: Inventory) -> Self:
+        equipment_union = self.all_items | other.all_items
+        return self.__class__(equipment_union)
+
+    def __ior__(self, other: Self):
+        self.update(other)
+
+    def __and__(self, other: Inventory) -> Self:
+        equipment_intersection = self.all_items & other.all_items
+        return self.__class__(equipment_intersection)
 
     def slot(self, slot: Slot) -> set[EquipmentItem]:
         match slot:
@@ -380,9 +879,6 @@ class Inventory:
             items.update(self.lookup_batch(list(names), by_name=True))
         return self.__class__(items)
 
-    def __add__(self, other: Self) -> Self:
-        return self.__class__(self.all_items | other.all_items)
-
     def filter_armor(self, by_styles: set[Style]):
         def predicate(item: EquipmentItem) -> bool:
             return bool(item.styles & by_styles)
@@ -401,10 +897,6 @@ class Inventory:
         else:
             return set()
         return set(filter(pred, self.stratagem))
-
-    def __or__(self, other: Inventory) -> Self:
-        equipment_union = self.all_items | other.all_items
-        return self.__class__(equipment_union)
 
     def update(self, other: Self):
         self.all_items.update(other.all_items)
@@ -426,13 +918,6 @@ class Inventory:
                 any_removed = True
         if any_removed:
             self._arrange_by_slot()
-
-    def __ior__(self, other: Self):
-        self.update(other)
-
-    def __and__(self, other: Inventory) -> Self:
-        equipment_intersection = self.all_items & other.all_items
-        return self.__class__(equipment_intersection)
 
     def lookup(self, by_designation: str | None = None, by_name: str | None = None) -> EquipmentItem | None:
         if by_name:
@@ -466,10 +951,10 @@ class Inventory:
 
 
 Everything = Inventory(_Equipment)
-BySource = dict[Source, Inventory] = {
+BySource = {
     src: Everything.filter_items(by_source=src) for src in Source
 }
-ByStyle = dict[Style, Inventory] = {
+ByStyle = {
     style: Everything.filter_items(by_style=style) for style in Style
 }
 
