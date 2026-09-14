@@ -72,11 +72,13 @@ class Slot(StrEnum, EnumEvalRepr):
         return cls.Stratagem
 
     def required(self):
+        """Return the number of items required to fill this loadout slot."""
         if self is self.Stratagem:
             return 4
         return 1
 
     def sort_key(self):
+        """Return a number used for ordering slots consistently."""
         match self:
             case self.Primary:
                 return 1
@@ -122,6 +124,7 @@ class StratagemSubtype(IntFlag, EnumEvalRepr):
     BackpackWeapon = Weapon | Backpack
 
     def type(self) -> StratagemType:
+        """Return the parent StratagemType."""
         st = StratagemType.Offensive
         match self:
             case self.Weapon | self.Backpack | self.BackpackWeapon:

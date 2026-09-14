@@ -23,7 +23,7 @@ class RegistrationMode(StrEnum):
         return cls.Clear
 
 
-class InventoryDatabase:
+class InventoryTracker:
     DefaultSources = {Source.STOCK, Source.HM, Source.PAC, Source.HG,
                       Source.EB, Source.BR, Source.OC, Source.RW}
     def __init__(self, path: Path):

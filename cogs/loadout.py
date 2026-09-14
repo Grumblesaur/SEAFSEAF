@@ -63,6 +63,13 @@ class Loadout(commands.Cog, name='Loadout'):
         ps = Playstyle([u.display_name for u in users])
         await ctx.message.reply(str(ps))
 
+    @commands.command(aliases=['default', 'dd'])
+    async def defaultdiver(self, ctx: commands.Context, *_mentions):
+        """defaultdiver [@mention, ...]
+
+        Receive default diver loadout assignments. Mention up to three squadmates."""
+
+
 
 async def setup(bot):
     await bot.add_cog(Loadout(bot))

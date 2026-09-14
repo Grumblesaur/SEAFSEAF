@@ -5,7 +5,7 @@ import discord
 import configuration
 from discord.ext import commands
 
-from registration import InventoryDatabase
+from tracking import InventoryTracker
 from exceptions import RandomizerError
 
 
@@ -16,7 +16,7 @@ class SEAFSEAF(commands.Bot):
 
         self.registry_files = config['paths']['registry']
         os.makedirs(self.registry_files, exist_ok=True)
-        self.registry = InventoryDatabase(Path(self.registry_files))
+        self.registry = InventoryTracker(Path(self.registry_files))
         self.prefix = config['config']['prefix']
         self.config = config
         intents = discord.Intents.default()

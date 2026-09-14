@@ -8,7 +8,7 @@ from typing import TypeVar, Iterable
 
 from inventory import (Style, Slot, EquipmentItem, Booster, Primary, Secondary, Throwable, Stratagem,
                        StratagemSubtype, StratagemType, Inventory, Everything, DefaultDiver, ByStyle)
-from registration import InventoryDatabase
+from tracking import InventoryTracker
 
 T = TypeVar('T')
 
@@ -201,7 +201,7 @@ class Squad:
                                    split(vehicles, squad_size),
                                    split(support_weapons, squad_size))]
 
-    def __init__(self, handles_to_names: dict[str, str], idb: InventoryDatabase):
+    def __init__(self, handles_to_names: dict[str, str], idb: InventoryTracker):
         self.handles_to_names = handles_to_names
         loadout_pools = {}
         roles = {}
