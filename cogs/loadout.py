@@ -1,7 +1,7 @@
 from discord.ext import commands
 
 import utils
-from eqrandomizer import Squad, Piecemeal, Playstyle
+from eqrandomizer import Squad, Piecemeal, Playstyle, DefaultDive
 from inventory import Slot, Everything
 
 
@@ -63,12 +63,14 @@ class Loadout(commands.Cog, name='Loadout'):
         ps = Playstyle([u.display_name for u in users])
         await ctx.message.reply(str(ps))
 
-    @commands.command(aliases=['default', 'dd'])
+    @commands.command(aliases=['default', 'dd', 'defaultdive'])
     async def defaultdiver(self, ctx: commands.Context, *_mentions):
         """defaultdiver [@mention, ...]
 
         Receive default diver loadout assignments. Mention up to three squadmates."""
-
+        users = {ctx.message.author} | {m for m in ctx.message.mentions}
+        dd = DefaultDive([u.display_name for u in users])
+        await ctx.message.reply(str(dd))
 
 
 async def setup(bot):

@@ -7,7 +7,7 @@ import random
 from typing import TypeVar, Iterable
 
 from inventory import (Style, Slot, EquipmentItem, Booster, Primary, Secondary, Throwable, Stratagem,
-                       StratagemSubtype, StratagemType, Inventory, Everything, DefaultDiver, ByStyle)
+                       StratagemSubtype, StratagemType, Inventory, Everything, ByStyle, Odds)
 from tracking import InventoryTracker
 
 T = TypeVar('T')
@@ -44,7 +44,7 @@ class Loadout:
         used_boosters.add(self.booster)
 
     def format(self, name: str) -> str:
-        return f'{name}, your loadout is:\n{self}'
+        return f'__{name}__, your loadout is:\n{self}'
 
     def warning(self, slot: Slot):
         return self.WarningSymbol if slot in self.slots_defaulted else ''
@@ -70,7 +70,7 @@ class Loadout:
 
     def _get_booster(self, used_boosters: set[Booster]) -> Booster:
         if not (boosters := self.equipment_pool.booster - used_boosters):
-            items, counts = DefaultDiver.booster_counts(used_boosters)
+            items, counts = DefaultDive.booster_counts(used_boosters)
             booster = random.sample(items, counts=counts, k=1)[0]
         else:
             booster = random.choice(list(boosters))
@@ -84,7 +84,7 @@ class Loadout:
                 Slot.Throwable: 'throwable'}
         if weapons := getattr(self.equipment_pool, attr[slot]):
             return random.choice(list(weapons))
-        items, counts = DefaultDiver.randomization_counts(slot)
+        items, counts = DefaultDive.randomization_counts(slot)
         self.slots_defaulted.add(slot)
         return random.sample(items, counts=counts, k=1)[0]
 
@@ -143,7 +143,7 @@ class Loadout:
             chosen_stratagems.update(random.sample(list(unlimited), k=unlimited_count))
         else:
             self.slots_defaulted.add(Slot.Stratagem)
-            items, counts = DefaultDiver.randomization_counts(Slot.Stratagem)
+            items, counts = DefaultDive.randomization_counts(Slot.Stratagem)
             chosen_stratagems = random.sample(items, k=4, counts=counts)
         # noinspection bad-argument-type
         return list[Stratagem](chosen_stratagems)
@@ -153,7 +153,7 @@ class Loadout:
         op = mode.operation()
         if not (armors := op(self.equipment_pool.armor, Everything.filter_armor(styles))):
             self.slots_defaulted.add(Slot.Armor)
-            items, counts = DefaultDiver.randomization_counts(Slot.Armor)
+            items, counts = DefaultDive.randomization_counts(Slot.Armor)
             return random.sample(items, counts=counts, k=1)
         return random.choice(armors)
 
@@ -278,3 +278,99 @@ class Playstyle:
         return '\n'.join(lines)
 
 
+class DefaultDive:
+    Loadout = {
+        Slot.Armor: {
+            Everything.lookup('B-01'): Odds.Common,
+            Everything.lookup('TR-40'): Odds.Rare,
+            Everything.lookup('TR-7'): Odds.Rare,
+        },
+        Slot.Primary: {
+            Everything.lookup('AR-23'): Odds.Common,
+            Everything.lookup('R-2124'): Odds.Rare,
+        },
+        Slot.Secondary: {
+            Everything.lookup('P-2'): Odds.Common,
+            Everything.lookup('P-19'): Odds.Special,
+            Everything.lookup('P-4'): Odds.Special,
+            Everything.lookup('P-113'): Odds.Special,
+            Everything.lookup('GP-31'): Odds.Special,
+        },
+        Slot.Throwable: {
+            Everything.lookup('G-12'): Odds.Common,
+            Everything.lookup('G-6'): Odds.Special,
+            Everything.lookup('G-16'): Odds.Rare,
+        },
+        Slot.Stratagem: {
+            Everything.lookup(by_name='Eagle Airstrike'): Odds.Common,
+            Everything.lookup(by_name='Eagle Strafing Run'): Odds.Common,
+            Everything.lookup(by_name='Eagle 500kg Bomb'): Odds.Rare,
+            Everything.lookup(by_name='Orbital Precision Strike'): Odds.Common,
+            Everything.lookup(by_name='Orbital Gatling Barrage'): Odds.Special,
+            Everything.lookup('MG-43'): Odds.Common,
+            Everything.lookup('M-105'): Odds.Special,
+            Everything.lookup('EAT-17'): Odds.Common,
+            Everything.lookup('GR-8'): Odds.Rare,
+            Everything.lookup('MG-206'): Odds.Rare,
+            Everything.lookup('B-1'): Odds.Common,
+            Everything.lookup('AX/AR-23'): Odds.Common,
+            Everything.lookup('A/MG-43'): Odds.Common,
+            Everything.lookup('A/G-16'): Odds.Special,
+        },
+        Slot.Booster: {
+            Everything.lookup(by_name='Vitality Enhancement'): Odds.Common,
+            Everything.lookup(by_name='Hellpod Space Optimization'): Odds.Common,
+            Everything.lookup(by_name='Stamina Enhancement'): Odds.Special,
+            Everything.lookup(by_name='UAV Recon Booster'): Odds.Rare,
+            Everything.lookup(by_name='Muscle Enhancement'): Odds.Rare,
+            Everything.lookup(by_name='Increased Reinforcement Budget'): Odds.Rare,
+        }
+    }
+
+    def __init__(self, names: list[str]):
+        self.players = {name: {} for name in names}
+        used_boosters = set()
+        for player in self.players:
+            boosters, bcounts = self.booster_counts(used_boosters)
+            b = random.sample(boosters, counts=bcounts, k=1)
+            used_boosters.add(b[0])
+            self.players[player][Slot.Booster] = b
+
+        for slot in [Slot.Throwable, Slot.Primary, Slot.Secondary, Slot.Armor]:
+            for player in self.players:
+                items, counts = self.randomization_counts(slot)
+                x = random.sample(items, counts=counts, k=1)
+                self.players[player][slot] = x
+
+        for player in self.players:
+            stratagems, scounts = self.randomization_counts(Slot.Stratagem)
+            strats = random.sample(stratagems, counts=scounts, k=4)
+            self.players[player][Slot.Stratagem] = strats
+
+    def __str__(self) -> str:
+        parts = []
+        for player, equipment in self.players.items():
+            lines = [f'__{player}__, your loadout is:']
+            for slot, contents in sorted(equipment.items(), key=lambda p: p[1].sort_key()):
+                lines.append(f'**{slot.name}**: {utils.format_series(contents)}')
+            parts.append('\n'.join(lines))
+        return '\n\n'.join(parts)
+
+    @classmethod
+    def randomization_counts(cls, slot: Slot) -> tuple[list[EquipmentItem], list[int]]:
+        items, counts = [], []
+        for item, odds in cls.Loadout[slot].items():
+            items.append(item)
+            counts.append(int(odds))
+        return items, counts
+
+    @classmethod
+    def booster_counts(cls, used_boosters) -> tuple[list[Booster], list[int]]:
+        slot_copy = {eitem: odds for eitem, odds in cls.Loadout[Slot.Booster]}
+        for ub in used_boosters:
+            slot_copy.pop(ub, None)
+        items, counts = [], []
+        for item, odds in slot_copy.items():
+            items.append(item)
+            counts.append(int(odds))
+        return items, counts
