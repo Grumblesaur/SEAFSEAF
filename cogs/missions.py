@@ -19,7 +19,7 @@ class Missions(commands.Cog, name="Missions"):
         do = DifficultyOrder()
         await ctx.message.reply(str(do))
 
-    @commands.command(aliases=['world', 'environ', 'environment'])
+    @commands.command(aliases=['world', 'env', 'environ', 'environment'])
     async def planet(self, ctx: commands.Context):
         """Receive an assignment for planetary conditions to play under."""
         po = PlanetOrder()
@@ -29,7 +29,7 @@ class Missions(commands.Cog, name="Missions"):
     async def mission(self, ctx: commands.Context):
         """Receive a random faction, planet, or difficulty assignment."""
         ms = Mission()
-        await ctx.message.reply(ms)
+        await ctx.message.reply(str(ms))
 
 
 async def setup(bot):

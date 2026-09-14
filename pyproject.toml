@@ -9,8 +9,6 @@ requires-python = ">=3.14"
 dependencies = [
     "discord-py>=2.7.1",
     "more-itertools>=11.1.0",
-    "odfpy>=1.4.1",
-    "pandas>=3.0.5",
     "pandas-stubs~=3.0.5",
 ]
 

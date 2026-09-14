@@ -189,6 +189,7 @@ class Style(StrEnum, EnumEvalRepr):
 
     Elemental = nonmember({Pyrotechnician, Fumigator, Electrician})
 
+
 class Odds(IntEnum, EnumEvalRepr):
     Common = 9
     Special = 3
@@ -202,7 +203,9 @@ class EquipmentItem:
         self.styles.add(Style.Helldiver)
         self.source = source
         self.slot = slot
-        self.designation = self.name.split(' ', 1)[0]
+        parts = self.name.split(' ')
+        self.designation = parts[0]
+        self.shortname = ''.join(p.capitalize() for p in parts[1:])
 
     def __hash__(self):
         return hash((self.__class__.__name__, self.slot, self.name))
@@ -273,6 +276,10 @@ class Stratagem(EquipmentItem):
         super().__init__(name, source, styles, Slot.Stratagem)
         self.type = sst.type()
         self.subtype = sst
+        if self.subtype in {StratagemSubtype.Eagle, StratagemSubtype.Orbital}:
+            parts = name.split(' ')
+            self.shortname = ''.join(p.capitalize() for p in parts[1:])
+            self.designation = ''.join(p.capitalize() for p in parts[:2])
 
     def _repr_args(self):
         return self.name, self.source, self.subtype, self.styles
@@ -396,6 +403,7 @@ class Source(StrEnum, EnumEvalRepr):
             if shorthand in eq_sources:
                 eq_sources.remove(shorthand)
                 eq_sources.extend(replacement_list)
+
 
 
 class SourceGroup(StrEnum):
@@ -927,7 +935,11 @@ class Inventory:
         else:
             return None
         for item in self.all_items:
-            if (item.name if by_name else item.designation).casefold() == cf:
+            if by_name and item.name == cf:
+                return item
+            if by_designation and item.designation == cf:
+                return item
+            if item.shortname.startswith(cf):
                 return item
         return None
 

@@ -1,9 +1,8 @@
 from discord.ext import commands
 
 import utils
-from eqrandomizer import Squad, Piecemeal
-from equipment import Slot
-from inventory import Everything
+from eqrandomizer import Squad, Piecemeal, Playstyle
+from inventory import Slot, Everything
 
 
 class Loadout(commands.Cog, name='Loadout'):
@@ -13,7 +12,9 @@ class Loadout(commands.Cog, name='Loadout'):
 
     @commands.command()
     async def loadout(self, ctx: commands.Context, *_mentions):
-        """Produce a full loadout for yourself, with up to three mentioned players."""
+        """loadout [@mention, ...]
+
+        Receive a loadout assignment. Mention up to three squadmates."""
         message_parts = []
         handles_to_names = {str(ctx.message.author.id): ctx.message.author.display_name}
         for count, mention in enumerate(ctx.message.mentions, start=1):
@@ -37,6 +38,10 @@ class Loadout(commands.Cog, name='Loadout'):
     # noinspection type-hints
     @commands.command()
     async def slots(self, ctx: commands.Context, *slots: Slot.from_string):
+        """slots <slot> [additional slots ...]
+        Valid slots: Primary | Secondary | Throwable | Stratagem | Booster | Armor
+
+        Name one or more slots to construct a partial loadout."""
         message_parts = []
         if (handle := str(ctx.message.author.id)) not in self.bot.inventory_database:
             inventory = Everything
@@ -47,6 +52,16 @@ class Loadout(commands.Cog, name='Loadout'):
         loadout = Piecemeal(inventory, set(slots))
         message_parts.append(str(loadout))
         await ctx.message.reply('\n\n'.join(message_parts))
+
+    @commands.command()
+    async def squadroles(self, ctx: commands.Context, *_mentions):
+        """squadroles [@mention, ...]
+
+        Receive role assignments to choose your own weapons by. Mention up to three squadmates."""
+        users = {ctx.message.author}
+        users.update(ctx.message.mentions)
+        ps = Playstyle([u.display_name for u in users])
+        await ctx.message.reply(str(ps))
 
 
 async def setup(bot):

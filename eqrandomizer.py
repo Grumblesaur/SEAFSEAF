@@ -3,12 +3,11 @@ from collections import Counter
 from enum import IntEnum
 
 import utils
-from inventory import Inventory, Everything, DefaultDiver, ByStyle
 import random
-from equipment import Style, Slot, EquipmentItem, Booster, StratagemSubtype, StratagemType, Primary, Secondary, \
-    Throwable, Stratagem
 from typing import TypeVar, Iterable
 
+from inventory import (Style, Slot, EquipmentItem, Booster, Primary, Secondary, Throwable, Stratagem,
+                       StratagemSubtype, StratagemType, Inventory, Everything, DefaultDiver, ByStyle)
 from registration import InventoryDatabase
 
 T = TypeVar('T')
@@ -221,7 +220,7 @@ class Squad:
     def __str__(self):
         loadout_strings = [loadout.format(self.handles_to_names[handle]) for handle, loadout in self.loadouts.items()]
         if any(lo.slots_defaulted for lo in self.loadouts.values()):
-            loadout_strings.append(f'-#{Loadout.WarningSymbol} Insufficient items available for slot type.'
+            loadout_strings.append(f'-#{Loadout.WarningSymbol} No items available for slot type.'
                                    ' Slot filled with default diving equipment.')
         return '\n\n'.join(loadout_strings)
 
@@ -253,6 +252,29 @@ class Piecemeal:
         parts = ['You have been assigned equipment in the following slots:']
         for slot, selection in sorted(self.selections.items(), key=lambda p: p[0].sort_key()):
             parts.append(f'**{slot.name}**: {utils.format_series(selection)}')
+
         return '\n'.join(parts)
+
+
+class Playstyle:
+    Headers = ['Your focus is on', 'You specialize in', 'Your work entails',
+               'Bring a kit designed around', 'Your duties involve']
+    Signoff = ['May the light of Libery guide you.',
+               'Let no opponent go unhindered by the corpses of their comrades.',
+               'Super Earth is counting on you.',
+               'Clear a path for Democracy.']
+
+    def __init__(self, names: list[str]):
+        self.helldivers = dict(zip(names, random.sample(Style, k=(n := len(names)))))
+        self.signoff = random.choice(self.Signoff)
+        self.headers = dict(zip(names, random.sample(self.Headers, k=n)))
+
+    def __str__(self) -> str:
+        plural = len(self.helldivers) > 1
+        lines = [f'Helldiver{"s" if plural else ""}! Here is your assignment:']
+        for name, role in self.helldivers.items():
+            lines.append(f'- __{name}__, you are our **{role.name}**. {self.headers[name]} {role.value}.')
+        lines.append(self.signoff)
+        return '\n'.join(lines)
 
 
