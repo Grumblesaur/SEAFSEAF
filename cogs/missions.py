@@ -3,7 +3,7 @@ from typing import Literal
 from discord.ext import commands
 
 import apiutils
-from randomizer import DifficultyOrder, PlanetOrder, FactionOrder, Mission
+from activities import DifficultyOrder, PlanetOrder, FactionOrder, Mission
 
 
 class Missions(commands.Cog, name="Missions"):

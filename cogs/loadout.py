@@ -6,7 +6,7 @@ from discord.ext import commands
 
 import utils
 import apiutils
-from eqrandomizer import Squad, Piecemeal, Playstyle, DefaultDive
+from equipment import Squad, Piecemeal, Playstyle, DefaultDive
 from inventory import Slot, Everything
 
 Bool = Literal['yes', 'no']
