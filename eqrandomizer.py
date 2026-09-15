@@ -1,5 +1,3 @@
-import operator
-import pprint
 from collections import Counter
 from enum import IntEnum
 
@@ -273,9 +271,10 @@ class Piecemeal:
                 self.selections[slot] = f'<no equipment registered for {slot} slot>'
 
     def __str__(self):
-        parts = ['You have been assigned equipment in the following slots:']
+        plural = 's' if len(self.selections) != 1 else ''
+        parts = [f'You have been assigned equipment in the following slot{plural}:']
         for slot, selection in sorted(self.selections.items(), key=lambda p: p[0].sort_key()):
-            parts.append(f'**{slot.name}**: {utils.format_series(selection)}')
+            parts.append(f'- **{slot.name}**: {utils.format_series(selection)}')
 
         return '\n'.join(parts)
 
@@ -283,13 +282,14 @@ class Piecemeal:
 class Playstyle:
     Headers = ['Your focus is on', 'You specialize in', 'Your work entails',
                'Bring a kit designed around', 'Your duties involve']
-    Signoff = ['May the light of Libery guide you.',
+    Signoff = ['May the light of Liberty guide you.',
                'Let no opponent go unhindered by the corpses of their comrades.',
                'Super Earth is counting on you.',
-               'Clear a path for Democracy.']
+               'Clear a path for Democracy.',
+               'Bring the hammer of Justice down upon them.']
 
     def __init__(self, names: list[str]):
-        self.helldivers = dict(zip(names, random.sample(Style, k=(n := len(names)))))
+        self.helldivers = dict(zip(names, random.sample(list(Style), k=(n := len(names)))))
         self.signoff = random.choice(self.Signoff)
         self.headers = dict(zip(names, random.sample(self.Headers, k=n)))
 

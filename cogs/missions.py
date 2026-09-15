@@ -1,5 +1,8 @@
+from typing import Literal
+
 from discord.ext import commands
 
+import apiutils
 from randomizer import DifficultyOrder, PlanetOrder, FactionOrder, Mission
 
 
@@ -7,29 +10,32 @@ class Missions(commands.Cog, name="Missions"):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(aliases=['enemy', 'enemies'])
+    @commands.hybrid_command(name='faction', aliases=['enemy', 'enemies'])
     async def faction(self, ctx: commands.Context):
         """Receive an assignment for a faction to fight."""
         fo = FactionOrder()
-        await ctx.message.reply(str(fo))
+        await apiutils.response(ctx, str(fo))
 
-    @commands.command(aliases=['diff', 'level'])
+    @commands.hybrid_command(name='difficulty', aliases=['diff', 'level'])
     async def difficulty(self, ctx: commands.Context):
         """Receive an assignment for a difficulty to play at."""
         do = DifficultyOrder()
-        await ctx.message.reply(str(do))
+        await apiutils.response(ctx, str(do))
 
-    @commands.command(aliases=['world', 'env', 'environ', 'environment'])
+    @commands.hybrid_command(name='planet', aliases=['world'])
     async def planet(self, ctx: commands.Context):
         """Receive an assignment for planetary conditions to play under."""
         po = PlanetOrder()
-        await ctx.message.reply(str(po))
+        await apiutils.response(ctx, str(po))
 
-    @commands.command()
-    async def mission(self, ctx: commands.Context):
-        """Receive a random faction, planet, or difficulty assignment."""
-        ms = Mission()
-        await ctx.message.reply(str(ms))
+    @commands.hybrid_command(name='mission', aliases=['orders', 'order'])
+    async def mission(self, ctx: commands.Context, mission_type: Literal['faction', 'planet', 'difficulty'] | None = None):
+        """Receive a mission based on the specified `mission_type` or a random one if left blank."""
+        if mission_type is not None:
+            order = Mission.from_string(mission_type).order()
+        else:
+            order = Mission.randomize()
+        await apiutils.response(ctx, str(order))
 
 
 async def setup(bot):

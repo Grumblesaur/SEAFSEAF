@@ -1,26 +1,37 @@
+from typing import Literal
+
+import discord
+from discord import app_commands
 from discord.ext import commands
 
 import utils
+import apiutils
 from eqrandomizer import Squad, Piecemeal, Playstyle, DefaultDive
 from inventory import Slot, Everything
 
+Bool = Literal['yes', 'no']
+
+
+def parse_bool(s: Bool) -> bool:
+    return s == 'yes'
+
+
+SQUADMATE_DESC = "A member of this server to include in your squad."
 
 class Loadout(commands.Cog, name='Loadout'):
     def __init__(self, bot):
         self.bot = bot
 
 
-    @commands.command()
-    async def loadout(self, ctx: commands.Context, *_mentions):
-        """loadout [@mention, ...]
-
-        Receive a loadout assignment. Mention up to three squadmates."""
+    @commands.hybrid_command(name='squadloadout', aliases=['loadout'])
+    @app_commands.describe(squadmate1=SQUADMATE_DESC, squadmate2=SQUADMATE_DESC, squadmate3=SQUADMATE_DESC)
+    async def squadloadout(self, ctx: commands.Context, squadmate1: discord.Member | None = None,
+                      squadmate2: discord.Member | None = None, squadmate3: discord.Member | None = None):
+        """Receive a loadout assignment. Mention up to three squadmates."""
         message_parts = []
-        handles_to_names = {str(ctx.message.author.id): ctx.message.author.display_name}
-        for count, mention in enumerate(ctx.message.mentions, start=1):
-            if len(handles_to_names) >= 4:
-                break
-            handles_to_names[str(mention.id)] = mention.display_name
+        players = [ctx.message.author]
+        players.extend(filter(None, [squadmate1, squadmate2, squadmate3]))
+        handles_to_names = {str(user.id): user.display_name for user in players}
         auto_registered = []
         for handle in handles_to_names:
             if handle not in self.bot.inventory_database:
@@ -33,44 +44,67 @@ class Loadout(commands.Cog, name='Loadout'):
                                  f' to update your equipment selection.')
         squad = Squad(handles_to_names, self.bot.inventory_database)
         message_parts.append(str(squad))
-        await ctx.message.reply('\n\n'.join(message_parts))
+        await apiutils.response(ctx, '\n\n'.join(message_parts))
 
-    # noinspection type-hints
-    @commands.command()
-    async def slots(self, ctx: commands.Context, *slots: Slot.from_string):
-        """slots <slot> [additional slots ...]
-        Valid slots: Primary | Secondary | Throwable | Stratagem | Booster | Armor
-
-        Name one or more slots to construct a partial loadout."""
+    async def _slots_core(self, ctx: commands.Context | discord.Interaction, handle: str, slots: set[Slot]):
         message_parts = []
-        if (handle := str(ctx.message.author.id)) not in self.bot.inventory_database:
+        if handle not in self.bot.inventory_database:
             inventory = Everything
-            message_parts.append('You are unregistered. Your equipment will be chosen from the entire'
-                                 f' SEAF catalog. Use `{self.bot.prefix}register` to change this.')
+            message_parts.append('You are unregistered. Your equipment will be chosen from the whole SEAF catalog.'
+                                 f' Use `register` to change this.')
         else:
             inventory = self.bot.inventory_database.fetch(handle)
-        loadout = Piecemeal(inventory, set(slots))
+        loadout = Piecemeal(inventory, slots)
         message_parts.append(str(loadout))
-        await ctx.message.reply('\n\n'.join(message_parts))
+        await apiutils.response(ctx, '\n\n'.join(message_parts))
 
-    @commands.command()
-    async def squadroles(self, ctx: commands.Context, *_mentions):
-        """squadroles [@mention, ...]
+    @app_commands.command(name='soloslots', description="Randomize equipment for specific loadout slots.")
+    @app_commands.describe(primary="Should a primary weapon be included?")
+    async def soloslots(self, ctx: discord.Interaction, primary: Bool = 'no', secondary: Bool = 'no',
+                        throwable: Bool = 'no', stratagems: Bool = 'no', booster: Bool = 'no',
+                        armor: Bool = 'no'):
+        """Name one or more slots to construct a partial loadout."""
+        slots = set()
+        if parse_bool(primary):
+            slots.add(Slot.Primary)
+        if parse_bool(secondary):
+            slots.add(Slot.Secondary)
+        if parse_bool(throwable):
+            slots.add(Slot.Throwable)
+        if parse_bool(stratagems):
+            slots.add(Slot.Stratagem)
+        if parse_bool(booster):
+            slots.add(Slot.Booster)
+        if parse_bool(armor):
+            slots.add(Slot.Armor)
+        return await self._slots_core(ctx, str(ctx.user.id), slots)
 
-        Receive role assignments to choose your own weapons by. Mention up to three squadmates."""
+    # noinspection type-hints
+    @commands.command(name='slots', description="Randomize equipment for specific loadout slots.")
+    async def slots(self, ctx: commands.Context, *slots: Slot.from_string):
+        """Name one or more slots to construct a partial loadout."""
+        return await self._slots_core(ctx, str(ctx.message.author.id), set(slots))
+
+
+    @commands.hybrid_command(name='squadroles', aliases=['roles', 'role'])
+    @app_commands.describe(squadmate1=SQUADMATE_DESC, squadmate2=SQUADMATE_DESC, squadmate3=SQUADMATE_DESC)
+    async def squadroles(self, ctx: commands.Context, squadmate1: discord.Member | None = None,
+                         squadmate2: discord.Member | None = None, squadmate3: discord.Member | None = None):
+        """Receive role assignments to choose your own weapons by. Include up to three squadmates."""
         users = {ctx.message.author}
-        users.update(ctx.message.mentions)
+        users.update(filter(None, [squadmate1, squadmate2, squadmate3]))
         ps = Playstyle([u.display_name for u in users])
-        await ctx.message.reply(str(ps))
+        await apiutils.response(ctx, str(ps))
 
-    @commands.command(aliases=['default', 'dd', 'defaultdive'])
-    async def defaultdiver(self, ctx: commands.Context, *_mentions):
-        """defaultdiver [@mention, ...]
-
-        Receive default diver loadout assignments. Mention up to three squadmates."""
-        users = {ctx.message.author} | {m for m in ctx.message.mentions}
+    @commands.hybrid_command(name='defaultdivers', aliases=['defaultdiver', 'defaultdive', 'default', 'dd'])
+    @app_commands.describe(squadmate1=SQUADMATE_DESC, squadmate2=SQUADMATE_DESC, squadmate3=SQUADMATE_DESC)
+    async def defaultdivers(self, ctx: commands.Context, squadmate1: discord.Member | None = None,
+                           squadmate2: discord.Member | None = None, squadmate3: discord.Member | None = None):
+        """Receive default diver loadout assignments. Include up to three squadmates."""
+        users = {ctx.message.author}
+        users.update(filter(None, [squadmate1, squadmate2, squadmate3]))
         dd = DefaultDive([u.display_name for u in users])
-        await ctx.message.reply(str(dd))
+        await apiutils.response(ctx, str(dd))
 
 
 async def setup(bot):

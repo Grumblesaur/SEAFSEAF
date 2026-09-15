@@ -7,20 +7,6 @@ from typing import TypeVar
 T = TypeVar('T')
 
 
-class MissionType(StrEnum):
-    Faction = 'faction'
-    Difficulty = 'difficulty'
-    Planet = 'planet'
-
-    @classmethod
-    def from_string(cls, s: str) -> MissionType:
-        cf = s.casefold()
-        for mt in cls:
-            if utils.prefix_match(mt, cf):
-                return mt
-        return cls.Faction
-
-
 def roll_against_odds(numerator: int, denominator: int) -> bool:
     return random.randint(1, denominator) <= numerator
 
@@ -149,7 +135,7 @@ class PlanetOrder:
                        f" this when plotting your super destroyer's next course.")
         elif order_type == 'Biome':
             biomes = random.choices(list(self.ConditionsByBiome.keys()), k=2)
-            message = (f"Helldiver! {preamble} in the conditions of **{biomes[0].lower()}(( and"
+            message = (f"Helldiver! {preamble} in the conditions of **{biomes[0].lower()}** and"
                        f" **{biomes[1].lower()}** biomes. Prioritize such worlds"
                        f" during your super destroyer's next war council.")
         else:  # 'Condition'
@@ -177,7 +163,31 @@ class PlanetOrder:
         return self.message
 
 
-class Mission:
-    Options = [DifficultyOrder, PlanetOrder, FactionOrder]
-    def __new__(cls) -> DifficultyOrder | PlanetOrder | FactionOrder:
-        return random.choice(cls.Options)()
+class Mission(StrEnum):
+    Faction = 'faction'
+    Difficulty = 'difficulty'
+    Planet = 'planet'
+
+    @classmethod
+    def from_string(cls, s: str) -> Mission:
+        cf = s.casefold()
+        for mt in cls:
+            if utils.prefix_match(mt, cf):
+                return mt
+        return cls.Faction
+
+    def order(self) -> PlanetOrder | DifficultyOrder | FactionOrder:
+        match self:
+            case self.Faction:
+                o = FactionOrder
+            case self.Difficulty:
+                o = DifficultyOrder
+            case self.Planet:
+                o = PlanetOrder
+        return o()
+
+    @classmethod
+    def randomize(cls) -> PlanetOrder | DifficultyOrder | FactionOrder:
+        return random.choice(list(cls)).order()
+
+
