@@ -1,20 +1,12 @@
-from typing import Literal
-
 import discord
 from discord import app_commands
 from discord.ext import commands
 
 import utils
 import apiutils
+from apiutils import Bool, parse_bool
 from equipment import Squad, Piecemeal, Playstyle, DefaultDive
 from inventory import Slot, Everything
-
-Bool = Literal['yes', 'no']
-
-
-def parse_bool(s: Bool) -> bool:
-    return s == 'yes'
-
 
 SQUADMATE_DESC = "A member of this server to include in your squad."
 

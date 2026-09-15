@@ -35,9 +35,9 @@ class SEAFSEAF(commands.Bot):
             cog_spec = f'cogs.{cog_path.name.removesuffix(cog_path.suffix)}'
             print(f'Loading {cog_spec} ...')
             await bot.load_extension(cog_spec)
-        print('syncing command tree...')
+        print('Syncing command tree...')
         synced_commands = await self.tree.sync()
-        print('synced commands:', synced_commands)
+        print('Synced commands:', synced_commands)
 
     async def on_ready(self):
         print(f'Logged in as `{self.user}`.')

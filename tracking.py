@@ -92,6 +92,8 @@ class InventoryTracker:
         individual = list(names) if names is not None else []
         individual.extend(designations or [])
         items = utils.format_series(individual) if individual else ''
+        if sources:
+            print([repr(src) for src in sources])
         groups = utils.format_series(sources) if sources else ''
 
         if items and groups:

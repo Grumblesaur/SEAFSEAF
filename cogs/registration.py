@@ -1,12 +1,58 @@
+from enum import Enum
+from typing import Literal, Iterable
+
 import discord
+from discord import app_commands
 from discord.ext import commands
+
+import apiutils
 from inventory import Source, SourceGroup
 from tracking import RegistrationMode
 from more_itertools import chunked
 
+RMode = Literal['Add', 'Remove']
+
+_StandardWarbonds = [discord.SelectOption(label=ev.name, description=ev.value) for ev in SourceGroup.Warbonds.sources()]
+class Dropdown(discord.ui.Select):
+    def __init__(self, options: list[discord.SelectOption], minimum: int = 1, maximum: int | None = None,
+                 placeholder: str = 'Make your choices.'):
+        super().__init__(placeholder=placeholder, min_values=minimum, max_values=(maximum or len(options)), options=options)
+
+
+class StandardWarbondView(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.values = None
+
+    @discord.ui.select(
+        cls=discord.ui.Select,
+        options=_StandardWarbonds,
+        placeholder='Select your warbond(s).',
+        max_values=len(_StandardWarbonds))
+    async def select(self, interaction: discord.Interaction, select: discord.ui.Select) -> None:
+        await interaction.response.defer()
+        self.values = select.values
+        self.stop()
+
+
 class Registration(commands.Cog, name="Registration"):
     def __init__(self, bot):
         self.bot = bot
+
+
+    @app_commands.command(name='warbonds')
+    async def warbonds(self, itx: discord.Interaction, rmode: RMode):
+        prep = 'to' if rmode == 'Add' else 'from'
+        await itx.response.defer()
+        view = StandardWarbondView()
+        await itx.followup.send(f"Select standard warbonds to {rmode.lower()} {prep} your inventory.", view=view)
+        await view.wait()
+        sources = [Source.from_string(v) for v in view.values]
+        Source.replace_shorthand(sources)
+        msg = self.bot.inventory_database.register(str(itx.user.id),
+                                                   sources=set(sources),
+                                                   rmode=RegistrationMode.from_string(rmode))
+        await itx.followup.send(msg)
 
     # noinspection type-hints
     @commands.command(aliases=['reg'])
