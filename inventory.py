@@ -293,11 +293,11 @@ AnyEquipment = Primary | Secondary | Throwable | Stratagem | Armor | Booster | E
 
 
 class Source(EnumEvalRepr, StrEnum):
-    BASE = '[Unlocked]'
+    BASE = '[All Base Game Equipment]'
     STOCK = 'Default Equipment'
     HM = 'Helldivers Mobilize'
 
-    SDD = '[Unlockable]'
+    SDD = '[All Super Destroyer Equipment]'
     PAC = 'Patriotic Administration Center'
     EB = 'Engineering Bay'
     HG = 'Hangar'
@@ -305,7 +305,7 @@ class Source(EnumEvalRepr, StrEnum):
     RW = 'Robotics Workshop'
     OC = 'Orbital Cannons'
 
-    EVENT = '[Event Items]'
+    EVENT = '[All Event Items]'
     EV_CT = 'Census Thunder'
     EV_CF = 'Celestial Fence'
     EV_LI = 'Lightning Intercept'
@@ -314,7 +314,7 @@ class Source(EnumEvalRepr, StrEnum):
     EV_CH = 'Counterdissident Hammer'
     EV_BE = 'Blazing Electorate'
 
-    WAR = '[Standard Warbonds]'
+    WAR = '[All Standard Warbonds]'
     SV = 'Steeled Veterans'
     CE = 'Cutting Edge'
     DD = 'Democratic Detonation'
@@ -337,17 +337,17 @@ class Source(EnumEvalRepr, StrEnum):
     EE = 'Exo Experts'
 
     # Legendary warbonds
-    LEG = '[Legendary Warbonds]'
+    LEG = '[All Legendary Warbonds]'
     ODST = 'Obedient Democracy Support Troopers'
     KZ = 'Righteous Revenants'
     WH = "Castellan's Creed"
 
     # Premium content
-    PAID = '[Paid Content]'
+    PAID = '[All Paid Content]'
     SCE = 'Super Citizen Edition'
     PB = 'Preorder Bonus'
 
-    SS = '[Super Store]'
+    SS = '[All Super Store Equipment]'
     SS_HM = '[$] Helldivers Mobilize'
     SS_SV = '[$] Steeled Veterans'
     SS_CE = '[$] Cutting Edge'
@@ -371,7 +371,7 @@ class Source(EnumEvalRepr, StrEnum):
     SS_EE = '[$] Exo Experts'
     SS_NW = '[$] Non-Warbond Pages'
 
-    OTHER = '[Other]'
+    OTHER = '[Other Equipment]'
     GIFT = 'Granted by Arrowhead'
 
     ALL = '[[Everything]]'
@@ -414,7 +414,6 @@ class Source(EnumEvalRepr, StrEnum):
 
     @classmethod
     def replace_shorthand(cls, eq_sources: list[Source]):
-        print('eq_sources:', eq_sources)
         replacement_mapping = {}
         for eq_source in eq_sources:
             if repl := eq_source.replacements():

@@ -12,27 +12,24 @@ from more_itertools import chunked
 
 RMode = Literal['Add', 'Remove']
 
-_StandardWarbonds = [discord.SelectOption(label=ev.name, description=ev.value) for ev in SourceGroup.Warbonds.sources()]
 class Dropdown(discord.ui.Select):
     def __init__(self, options: list[discord.SelectOption], minimum: int = 1, maximum: int | None = None,
                  placeholder: str = 'Make your choices.'):
         super().__init__(placeholder=placeholder, min_values=minimum, max_values=(maximum or len(options)), options=options)
 
 
-class StandardWarbondView(discord.ui.View):
-    def __init__(self):
-        super().__init__()
+class EnumerationView(discord.ui.View):
+    def __init__(self, enum_values: list[Enum], **kwargs):
+        super().__init__(timeout=kwargs.get('timeout', 180))
         self.values = None
-
-    @discord.ui.select(
-        cls=discord.ui.Select,
-        options=_StandardWarbonds,
-        placeholder='Select your warbond(s).',
-        max_values=len(_StandardWarbonds))
-    async def select(self, interaction: discord.Interaction, select: discord.ui.Select) -> None:
-        await interaction.response.defer()
-        self.values = select.values
-        self.stop()
+        options = [discord.SelectOption(label=ev.name, description=ev.value) for ev in enum_values]
+        dd = Dropdown(options, **kwargs)
+        async def select_callback(interaction: discord.Interaction):
+            await interaction.response.defer(ephemeral=True)
+            self.values = dd.values
+            self.stop()
+        dd.callback = select_callback
+        self.add_item(dd)
 
 
 class Registration(commands.Cog, name="Registration"):
@@ -40,19 +37,78 @@ class Registration(commands.Cog, name="Registration"):
         self.bot = bot
 
 
-    @app_commands.command(name='warbonds')
-    async def warbonds(self, itx: discord.Interaction, rmode: RMode):
-        prep = 'to' if rmode == 'Add' else 'from'
+    @staticmethod
+    def _fetch_source_group(itx: discord.Interaction) -> SourceGroup:
+        sg = SourceGroup.All
+        match itx.command.name:
+            case 'warbonds':
+                sg = SourceGroup.Warbonds
+            case 'legendary':
+                sg = SourceGroup.Legendary
+            case 'superstore':
+                sg = SourceGroup.SuperStore
+            case 'superdestroyer':
+                sg = SourceGroup.SuperDestroyer
+            case 'campaign':
+                sg = SourceGroup.Campaign
+            case 'basic':
+                sg = SourceGroup.Basic
+            case 'premium':
+                sg = SourceGroup.Premium
+            case 'other':
+                sg = SourceGroup.Etc
+        return sg
+
+    async def source_core(self, itx: discord.Interaction, registration_mode: RMode):
         await itx.response.defer()
-        view = StandardWarbondView()
-        await itx.followup.send(f"Select standard warbonds to {rmode.lower()} {prep} your inventory.", view=view)
+        rmode = RegistrationMode.from_string(registration_mode)
+        sg = self._fetch_source_group(itx)
+        view = EnumerationView(sg.sources())
+        await itx.followup.send(rmode.sentence(), view=view)
         await view.wait()
         sources = [Source.from_string(v) for v in view.values]
         Source.replace_shorthand(sources)
         msg = self.bot.inventory_database.register(str(itx.user.id),
                                                    sources=set(sources),
-                                                   rmode=RegistrationMode.from_string(rmode))
+                                                   rmode=rmode)
         await itx.followup.send(msg)
+
+    @app_commands.command(name='warbonds', description='Select regular warbonds to add or remove equipment.')
+    async def warbonds(self, itx: discord.Interaction, registration_mode: RMode):
+        await self.source_core(itx, registration_mode)
+
+    @app_commands.command(name="legendary", description='Select legendary warbonds to add or remove equipment.')
+    async def legendary(self, itx: discord.Interaction, registration_mode: RMode):
+        await self.source_core(itx, registration_mode)
+
+    @app_commands.command(name='basic', description='Select basic equipment sources to add or remove equipment.')
+    async def basic(self, itx: discord.Interaction, registration_mode: RMode):
+        await self.source_core(itx, registration_mode)
+
+    @app_commands.command(name='superdestroyer', description='Select super destroyer facilities to add or remove equipment.')
+    async def superdestroyer(self, itx: discord.Interaction, registration_mode: RMode):
+        await self.source_core(itx, registration_mode)
+
+    @app_commands.command(name='superstore', description='Select super store pages to add or remove equipment.')
+    async def superstore(self, itx: discord.Interaction, registration_mode: RMode):
+        await self.source_core(itx, registration_mode)
+
+    @app_commands.command(name='premium', description='Select premium content categories to add or remove equipment.')
+    async def premium(self, itx: discord.Interaction, registration_mode: RMode):
+        await self.source_core(itx, registration_mode)
+
+    @app_commands.command(name='campaigns', description='Select campaigns to add or remove equipment.')
+    async def campaigns(self, itx: discord.Interaction, registration_mode: RMode):
+        await self.source_core(itx, registration_mode)
+
+    @app_commands.command(name='other', description='Select from other equipment categories to add or remove equipment.')
+    async def other(self, itx: discord.Interaction, registration_mode: RMode):
+        await self.source_core(itx, registration_mode)
+
+    @app_commands.command(name='clear-inventory', description='Unregister all your equipment.')
+    async def clear(self, itx: discord.Interaction):
+        msg = self.bot.inventory_database.register(str(itx.user.id), rmode=RegistrationMode.Clear)
+        await itx.response.send_message(msg)
 
     # noinspection type-hints
     @commands.command(aliases=['reg'])

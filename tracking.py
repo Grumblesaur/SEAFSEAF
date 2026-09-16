@@ -16,6 +16,19 @@ class RegistrationMode(StrEnum):
     Set = 'Replace'
     Add = 'Include'
 
+    def sentence(self):
+        h = 'Select sources'
+        match self:
+            case self.Add:
+                return f'{h} to add items to your inventory.'
+            case self.Set:
+                return f'{h} to change your inventory.'
+            case self.Drop:
+                return f'{h} to remove items from your inventory.'
+            case self.Clear:
+                return 'All items will be removed from your inventory.'
+
+
     @classmethod
     def from_string(cls, s: str) -> RegistrationMode:
         cf = s.casefold()
@@ -68,9 +81,13 @@ class InventoryTracker:
                  rmode: RegistrationMode = RegistrationMode.Add) -> str:
         match rmode:
             case RegistrationMode.Clear:
-                self.registered.discard(handle)
+                if handle in self:
+                    adverb = ' '
+                    self.registered.discard(handle)
+                else:
+                    adverb = ' already '
                 self.user_path(handle).unlink(missing_ok=True)
-                return "Your inventory has been erased."
+                return f"Your inventory has{adverb}been erased."
             case RegistrationMode.Add:
                 if handle in self.registered:
                     inventory = self.fetch(handle)
@@ -92,8 +109,6 @@ class InventoryTracker:
         individual = list(names) if names is not None else []
         individual.extend(designations or [])
         items = utils.format_series(individual) if individual else ''
-        if sources:
-            print([repr(src) for src in sources])
         groups = utils.format_series(sources) if sources else ''
 
         if items and groups:
