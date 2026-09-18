@@ -52,11 +52,12 @@ class Loadout(commands.Cog, name='Loadout'):
 
     @app_commands.command(name='soloslots', description="Randomize equipment for specific loadout slots.")
     @app_commands.describe(primary="Should a primary weapon be included?")
-    async def soloslots(self, ctx: discord.Interaction, primary: Bool = 'no', secondary: Bool = 'no',
+    async def soloslots(self, itx: discord.Interaction, primary: Bool = 'no', secondary: Bool = 'no',
                         throwable: Bool = 'no', stratagems: Bool = 'no', booster: Bool = 'no',
                         armor: Bool = 'no'):
         """Name one or more slots to construct a partial loadout."""
         slots = set()
+        handle = str(itx.user.id)
         if parse_bool(primary):
             slots.add(Slot.Primary)
         if parse_bool(secondary):
@@ -69,13 +70,14 @@ class Loadout(commands.Cog, name='Loadout'):
             slots.add(Slot.Booster)
         if parse_bool(armor):
             slots.add(Slot.Armor)
-        return await self._slots_core(ctx, str(ctx.user.id), slots)
+        return await self._slots_core(itx, handle, slots)
 
     # noinspection type-hints
     @commands.command(name='slots', description="Randomize equipment for specific loadout slots.")
     async def slots(self, ctx: commands.Context, *slots: Slot.from_string):
         """Name one or more slots to construct a partial loadout."""
-        return await self._slots_core(ctx, str(ctx.message.author.id), set(slots))
+        handle = str(ctx.message.author.id)
+        return await self._slots_core(ctx, handle, set(slots))
 
 
     @commands.hybrid_command(name='squadroles', aliases=['roles', 'role'])
