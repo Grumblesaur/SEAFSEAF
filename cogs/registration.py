@@ -26,7 +26,8 @@ class EnumerationView(discord.ui.View):
         dd = Dropdown(options, **kwargs)
         async def select_callback(interaction: discord.Interaction):
             await interaction.response.defer(ephemeral=True)
-            self.values = dd.values
+            if kwargs.get('protected', False) and await dd.interaction_check(interaction):
+                self.values = dd.values
             self.stop()
         dd.callback = select_callback
         self.add_item(dd)
@@ -63,7 +64,7 @@ class Registration(commands.Cog, name="Registration"):
         await itx.response.defer()
         rmode = RegistrationMode.from_string(registration_mode)
         sg = self._fetch_source_group(itx)
-        view = EnumerationView(sg.sources())
+        view = EnumerationView(sg.sources(), protected=True)
         await itx.followup.send(rmode.sentence(), view=view)
         await view.wait()
         sources = [Source.from_string(v) for v in view.values]
