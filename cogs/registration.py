@@ -28,7 +28,7 @@ class EnumerationView(discord.ui.View):
             await interaction.response.defer(ephemeral=True)
             if kwargs.get('protected', False) and await dd.interaction_check(interaction):
                 self.values = dd.values
-            self.stop()
+                self.stop()
         dd.callback = select_callback
         self.add_item(dd)
 
