@@ -335,6 +335,7 @@ class Source(EnumEvalRepr, StrEnum):
     SB = 'Siege Breakers'
     ED = 'Entrenched Division'
     EE = 'Exo Experts'
+    ID = 'Ironclad Democracy'
 
     # Legendary warbonds
     LEG = '[All Legendary Warbonds]'
@@ -370,6 +371,7 @@ class Source(EnumEvalRepr, StrEnum):
     SS_ED = '[$] Entrenched Division'
     SS_EE = '[$] Exo Experts'
     SS_NW = '[$] Non-Warbond Pages'
+    SS_ID = '[$] Ironclad Democracy'
 
     OTHER = '[Other Equipment]'
     GIFT = 'Granted by Arrowhead'
@@ -394,9 +396,9 @@ class Source(EnumEvalRepr, StrEnum):
         if self is self.ALL or self is self.EVENT:
             replacements.extend([self.EV_CT, self.EV_CF, self.EV_LI, self.EV_PE, self.EV_VP, self.EV_CH, self.EV_BE])
         if self is self.ALL or self is self.WAR:
-            replacements.extend([self.SV, self.CE, self.DD, self.PP, self.VC, self.FF,
-                                 self.CA, self.TE, self.UL, self.SF, self.BJ, self.MC, self.FL,
-                                 self.CG, self.DUDE, self.PC, self.RR, self.SB, self.ED, self.EE])
+            replacements.extend([self.SV, self.CE, self.DD, self.PP, self.VC, self.FF, self.CA,
+                                 self.TE, self.UL, self.SF, self.BJ, self.MC, self.FL, self.CG,
+                                 self.DUDE, self.PC, self.RR, self.SB, self.ED, self.EE, self.ID])
         if self is self.ALL or self is self.LEG:
             replacements.extend([self.ODST, self.KZ, self.WH])
         if self is self.ALL or self is self.PAID:
@@ -497,6 +499,7 @@ class Passive(EnumEvalRepr, StrEnum):
     SupplementaryAdrenaline = "Supplementary Adrenaline"
     TrueGrit = "True Grit"
     Unflinching = "Unflinching"
+    BluntForceMitigation = "Blunt-Force Mitigation"
 
     @classmethod
     def elemental(cls):
@@ -648,6 +651,9 @@ _Equipment = [
     Armor('UF-16 Inspector', Source.TE, Passive.Unflinching, Weight.Light),
     Armor('UF-84 Doubt Killer', Source.SS_TE, Passive.Unflinching, Weight.Medium),
     Armor('UF-50 Bloodhound', Source.TE, Passive.Unflinching, Weight.Medium),
+    Armor('BFM-16 Tanker', Source.ID, Passive.BluntForceMitigation, Weight.Light),
+    Armor('BFM-77 Reformer', Source.SS_ID, Passive.BluntForceMitigation, Weight.Medium),
+    Armor('BFM-220 Ironclad', Source.ID, Passive.BluntForceMitigation, Weight.Heavy),
     Primary('AR-23 Liberator', Source.STOCK, PrimaryType.AR, {Style.Lawnmower, Style.Soloist}),
     Primary('AR-23P Liberator Penetrator', Source.HM, PrimaryType.AR, {Style.Bouncer}),
     Primary('AR-23C Liberator Concussive', Source.SV, PrimaryType.AR, {Style.Trapper}),
@@ -700,6 +706,9 @@ _Equipment = [
     Primary('FLAM-66 Torcher', Source.FF, PrimaryType.SP, {Style.Brawler, Style.Pyrotechnician, Style.Bouncer, Style.Lawnmower}),
     Primary('JAR-5 Dominator', Source.SV, PrimaryType.SP, {Style.Sniper, Style.Bouncer, Style.Trapper}),
     Primary('VG-70 Variable', Source.CG, PrimaryType.SP, {Style.Juggernaut, Style.Brawler, Style.Medic, Style.Scout}),
+    Primary('AR-11 Arbitrator', Source.ID, PrimaryType.AR, {Style.Lawnmower, Style.Brawler}),
+    Primary('GL-15 Evictor', Source.ID, PrimaryType.EXPL, {Style.Demolitionist, Style.Grenadier, Style.Artillerist, Style.Bouncer}),
+    Primary('LAS-12 Sai', Source.SS_ID, PrimaryType.EB, {Style.Optician, Style.Bouncer, Style.Soloist}),
     Secondary('M6C/SOCOM Pistol', Source.ODST, SecondaryType.Pistol, {Style.Infiltrator, Style.Scout}),
     Secondary('P-113 Verdict', Source.PP, SecondaryType.Pistol, {Style.Bouncer, Style.Soloist, Style.Engineer}),
     Secondary('P-19 Redeemer', Source.HM, SecondaryType.Pistol, {Style.Lawnmower, Style.Soloist, Style.Engineer}),
@@ -724,6 +733,7 @@ _Equipment = [
     Secondary('P-40K Bolt Pistol', Source.WH, SecondaryType.Special, {Style.Juggernaut, Style.Sheriff}),
     Secondary('PLAS-15 Loyalist', Source.TE, SecondaryType.Special, {Style.Cleanser, Style.Demolitionist, Style.Engineer, Style.Bouncer}),
     Secondary('SG-22 Bushwhacker', Source.VC, SecondaryType.Special, {Style.Brawler, Style.Lawnmower}),
+    Secondary('P-34 Breacher', Source.ID, SecondaryType.Special, {Style.Demolitionist, Style.Juggernaut}),
     Throwable('G-10 Incendiary', Source.SV, ThrowableType.STD, {Style.Pyrotechnician, Style.Bouncer, Style.Grenadier, Style.Demolitionist}),
     Throwable('G-12 High Explosive', Source.STOCK, ThrowableType.STD, {Style.Grenadier, Style.Demolitionist, Style.Juggernaut}),
     Throwable('G-6 Frag', Source.HM, ThrowableType.STD, {Style.Grenadier, Style.Lawnmower, Style.Bouncer, Style.Demolitionist}),
@@ -745,6 +755,8 @@ _Equipment = [
     Throwable('G/SH-39 Shield', Source.SB, ThrowableType.SL, {Style.Engineer, Style.Soloist, Style.Sniper, Style.Logistician, Style.Survivalist}),
     Throwable('K-2 Throwing Knife', Source.VC, ThrowableType.SL, {Style.Infiltrator, Style.Brawler, Style.Bouncer}),
     Throwable('TM-1 Lure Mine', Source.RR, ThrowableType.SL, {Style.Infiltrator, Style.Engineer, Style.Trapper, Style.Juggernaut}),
+    Throwable('G-8 Immolation', Source.ID, ThrowableType.SL, {Style.Pyrotechnician, Style.Grenadier}),
+    Throwable('G-60 Anti-Tank Seeker', Source.ID, ThrowableType.SL, {Style.Juggernaut, Style.Tracker}),
     Stratagem('40-K Meltagun', Source.WH, StratagemSubtype.Weapon, {Style.Optician, Style.Juggernaut, Style.Brawler}),
     Stratagem('AC-8 Autocannon', Source.PAC, StratagemSubtype.BackpackWeapon, {Style.Juggernaut, Style.Grenadier, Style.Artillerist, Style.Logistician}),
     Stratagem('APW-1 Anti-Materiel Rifle', Source.PAC, StratagemSubtype.Weapon, {Style.Sniper, Style.Scout, Style.Spotter}),
@@ -855,6 +867,8 @@ _Equipment = [
     Booster('Sample Scanner', Source.MC, {Style.Driver, Style.Scout, Style.Infiltrator}),
     Booster('Stun Pods', Source.FL, {Style.Pilot, Style.Trapper, Style.Spotter, Style.Tracker}),
     Booster('Concealed Insertion', Source.RR, {Style.Pilot, Style.Driver, Style.Infiltrator, Style.Scout, Style.Spotter}),
+    Booster('Integrated Extinguishers', Source.ID, {Style.Pyrotechnician}),
+    Booster('Surplus EAT Allocation', Source.ID, {Style.Artillerist, Style.Juggernaut, Style.Scout}),
 ]
 
 
